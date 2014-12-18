@@ -1,5 +1,5 @@
-Astro Observability Planner
-===========================
+Astronomy Observability Planner
+===============================
 
 Astro Observability Planner is a GUI program that shows when an astronomical
 object will be visible in the sky.  Times of observability are shown as regions
