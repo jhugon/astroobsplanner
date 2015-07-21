@@ -13,11 +13,11 @@ Requirements
 
 Versions that have been shown to work in parenthesis
 
-- numpy (1.7.1, 1.9.1)
+- numpy (1.7.1, 1.8.2, 1.9.1)
 - matplotlib, with TkAgg support (1.2.1, 1.4.2)
-- astropy (0.4.2)
+- astropy (0.4.2, 1.0.3)
 - pyephem (3.7.5.3)
-- pytz (2012c, 2013.10)
+- pytz (2012c, 2013.10, 2014.10)
 
 Targets
 -------
