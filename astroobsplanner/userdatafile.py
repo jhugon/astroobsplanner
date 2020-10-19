@@ -64,7 +64,7 @@ class UserDataFileJson(UserDataFileBase):
     except IOError as e:
       if e.errno == 2:
         return {}
-      print "Error opening json file",e
+      print("Error opening json file",e)
       sys.exit(1)
 
   def writeDict(self,obj):
@@ -74,7 +74,7 @@ class UserDataFileJson(UserDataFileBase):
 if __name__ == "__main__":
 
   uco = UserDataFileJson("astro-observability-test","locations.json")
-  print uco.getFileName()
+  print(uco.getFileName())
   data = {'location1':[12521.125,125125.125,1256.5]}
   uco.writeDict(data)
-  print uco.readDict()
+  print(uco.readDict())

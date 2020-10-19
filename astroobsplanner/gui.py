@@ -8,16 +8,16 @@ matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 import matplotlib.gridspec
-from mplsetup import *
+from .mplsetup import *
 
-from Tkinter import *
-import tkFileDialog
-import ttk
+from tkinter import *
+import tkinter.filedialog
+import tkinter.ttk
 
-from locationcache import LocationCache, LocationError
-from lookuptarget import lookuptargetxephem, NameResolveError
-from observabilityplot import ObservabilityPlot
-from observabilitylegend import LegendForObservability
+from .locationcache import LocationCache, LocationError
+from .lookuptarget import lookuptargetxephem, NameResolveError
+from .observabilityplot import ObservabilityPlot
+from .observabilitylegend import LegendForObservability
 
 class Gui(object):
 
@@ -79,16 +79,16 @@ class Gui(object):
         self.beginDateConfigFrame.pack()
         self.beginDateLabel = Label(self.beginDateConfigFrame,text="Begin Date:")
         self.beginDateLabel.pack()
-        self.beginYearEntry = ttk.Combobox(self.beginDateConfigFrame,width=4)
+        self.beginYearEntry = tkinter.ttk.Combobox(self.beginDateConfigFrame,width=4)
         self.beginYearEntry.pack(side=LEFT)
-        self.beginMonthEntry = ttk.Combobox(self.beginDateConfigFrame,width=2)
+        self.beginMonthEntry = tkinter.ttk.Combobox(self.beginDateConfigFrame,width=2)
         self.beginMonthEntry.pack(side=LEFT)
-        self.beginDayEntry = ttk.Combobox(self.beginDateConfigFrame,width=2)
+        self.beginDayEntry = tkinter.ttk.Combobox(self.beginDateConfigFrame,width=2)
         self.beginDayEntry.pack(side=LEFT)
         thisYear = datetime.date.today().year
-        self.beginYearEntry['values'] = range(thisYear,thisYear+11)
-        self.beginMonthEntry['values'] = range(1,13)
-        self.beginDayEntry['values'] = range(1,32)
+        self.beginYearEntry['values'] = list(range(thisYear,thisYear+11))
+        self.beginMonthEntry['values'] = list(range(1,13))
+        self.beginDayEntry['values'] = list(range(1,32))
         self.beginYearEntry.current(0)
         self.beginMonthEntry.current(0)
         self.beginDayEntry.current(0)
@@ -100,16 +100,16 @@ class Gui(object):
         self.endDateConfigFrame.pack()
         self.endDateLabel = Label(self.endDateConfigFrame,text="Begin Date:")
         self.endDateLabel.pack()
-        self.endYearEntry = ttk.Combobox(self.endDateConfigFrame,width=4)
+        self.endYearEntry = tkinter.ttk.Combobox(self.endDateConfigFrame,width=4)
         self.endYearEntry.pack(side=LEFT)
-        self.endMonthEntry = ttk.Combobox(self.endDateConfigFrame,width=2)
+        self.endMonthEntry = tkinter.ttk.Combobox(self.endDateConfigFrame,width=2)
         self.endMonthEntry.pack(side=LEFT)
-        self.endDayEntry = ttk.Combobox(self.endDateConfigFrame,width=2)
+        self.endDayEntry = tkinter.ttk.Combobox(self.endDateConfigFrame,width=2)
         self.endDayEntry.pack(side=LEFT)
         thisYear = datetime.date.today().year
-        self.endYearEntry['values'] = range(thisYear,thisYear+11)
-        self.endMonthEntry['values'] = range(1,13)
-        self.endDayEntry['values'] = range(1,32)
+        self.endYearEntry['values'] = list(range(thisYear,thisYear+11))
+        self.endMonthEntry['values'] = list(range(1,13))
+        self.endDayEntry['values'] = list(range(1,32))
         self.endYearEntry.current(0)
         self.endMonthEntry.current(11)
         self.endDayEntry.current(30)
@@ -268,7 +268,7 @@ class Gui(object):
         self.fig.savefig(self.saveFileName)
 
     def saveFileAs(self):
-        self.saveFileName = tkFileDialog.asksaveasfilename(defaultextension=".png",filetypes=[('PNG Image','.png'),('Portable Document Format','.pdf'),("Scalable Vector Graphics Image",'.svg')],title="Save Astro Observability Plan As")
+        self.saveFileName = tkinter.filedialog.asksaveasfilename(defaultextension=".png",filetypes=[('PNG Image','.png'),('Portable Document Format','.pdf'),("Scalable Vector Graphics Image",'.svg')],title="Save Astro Observability Plan As")
         #print "filename: ",self.saveFileName
         if self.saveFileName:
           self.fig.savefig(self.saveFileName)
@@ -288,7 +288,7 @@ class Gui(object):
           #print beginYear,beginMonth,beginDay
           beginDate = datetime.date(beginYear,beginMonth,beginDay)
         except Exception as e:
-          print "Error getting begin date: ",e
+          print("Error getting begin date: ",e)
         try:
           endYear    = int(self.endYearEntry.get())
           endMonth   = int(self.endMonthEntry.get())
@@ -296,7 +296,7 @@ class Gui(object):
           #print endYear,endMonth,endDay
           endDate = datetime.date(endYear,endMonth,endDay)
         except Exception as e:
-          print "Error getting end date: ",e
+          print("Error getting end date: ",e)
         #print beginDate,endDate
         self.beginDateStatusVar.set("")
         if not beginDate or not endDate:
@@ -367,7 +367,7 @@ class TargetConfig(object):
           self.targetStatusLabel.configure(fg="green")
           return True
         except NameResolveError as e:
-          print "lookuptarget exception: ",e
+          print("lookuptarget exception: ",e)
           self.targetStatusLabelTextVar.set(":-(")
           self.targetStatusLabel.configure(fg="red")
           return False
@@ -397,7 +397,7 @@ class LocationConfig(object):
         self.gui = gui
         self.master = self.gui.locationEntryFrame
         self.selectedLocName = StringVar()
-        self.widget = ttk.Combobox(self.master,textvariable=self.selectedLocName,state='readonly')
+        self.widget = tkinter.ttk.Combobox(self.master,textvariable=self.selectedLocName,state='readonly')
         self.widget.pack()
 
         self.locationCache = LocationCache()
@@ -436,7 +436,7 @@ class LocationConfig(object):
             #print self.widget['values']
             self.widget.current(1)
           except LocationError as e:
-            print e
+            print(e)
 
 class LocationCreateDialog(object):
   def __init__(self,creatorWindow,doneCallback):

@@ -176,7 +176,7 @@ class ObservabilityPlot(object):
     """
     if labels:
       if len(labels)!=len(self.data):
-        print "Error: ObservabilityPlot.plot: Length of labels arg must match length of coordinates. exiting."
+        print("Error: ObservabilityPlot.plot: Length of labels arg must match length of coordinates. exiting.")
         sys.exit(1)
 
     fig, ax = None, None
@@ -190,11 +190,11 @@ class ObservabilityPlot(object):
     ax.set_ylabel("Local Time")
     if show_all_times:
       ax.set_ylim(0,24)
-      ax.set_yticks(range(0,25,3))
+      ax.set_yticks(list(range(0,25,3)))
       ax.set_yticklabels(["{0:02d}:00".format(x % 24) for x in range(12,37,3)])
     else:
       ax.set_ylim(4,20)
-      ax.set_yticks(range(6,19,3))
+      ax.set_yticks(list(range(6,19,3)))
       ax.set_yticklabels(["{0:02d}:00".format(x % 24) for x in range(18,33,3)])
 
     for icoord, coorddata in enumerate(self.data):
@@ -244,9 +244,9 @@ class ObservabilityPlot(object):
     ephemDateSets = [[]]
     zipTuples = None
     if ephemDates:
-      zipTuples = zip(dates,dataPoints,ephemDates)
+      zipTuples = list(zip(dates,dataPoints,ephemDates))
     else:
-      zipTuples = zip(dates,dataPoints)
+      zipTuples = list(zip(dates,dataPoints))
     for tup in zipTuples:
       point = None
       day = None

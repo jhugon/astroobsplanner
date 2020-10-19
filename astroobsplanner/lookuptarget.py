@@ -3,7 +3,7 @@ import csv
 import ephem
 from astropy.coordinates import get_icrs_coordinates, SkyCoord
 from astropy.coordinates.name_resolve import NameResolveError
-from userdatafile import UserDataFileBase
+from .userdatafile import UserDataFileBase
 
 def lookuptarget(name):
   """

@@ -16,7 +16,7 @@ class LegendForObservability(object):
       assert(len(hatchList)==len(labels))
       sun_patch = matplotlib.patches.Patch(color='0.5')
     self.proxyArtists = [sun_patch]
-    self.labels = [u"Sun"]
+    self.labels = ["Sun"]
 
     if showMoon:
         self.labels.append("Moon")
@@ -36,14 +36,14 @@ class LegendForObservability(object):
       lwords = l.split(' ')
       lwordsNew = []
       for word in lwords:
-        wordNew = unicode(word)
+        wordNew = str(word)
         for codePointInt in range(0x03B1,0x3CA): # greek lowercase unicode
-          codePointStrUnicode = unichr(codePointInt)
+          codePointStrUnicode = chr(codePointInt)
           codePointLetterName = unicodedata.name(codePointStrUnicode).split(' ')[-1].lower()
           if word.lower() == codePointLetterName:
             wordNew = codePointStrUnicode
         lwordsNew.append(wordNew)
-      l = u' '.join(lwordsNew)
+      l = ' '.join(lwordsNew)
       self.labels.append(l)
       
     ncol = 1
@@ -54,7 +54,7 @@ class LegendForObservability(object):
                             mode='expand', borderaxespad=0.,
                             ncol=ncol,frameon=False
                         )
-    textToPrint = u"Regions Show Times When \nAlt > {0}° (Sun Alt > {1}°)".format(obsplot.minAlt,obsplot.minAltSun)
+    textToPrint = "Regions Show Times When \nAlt > {0}° (Sun Alt > {1}°)".format(obsplot.minAlt,obsplot.minAltSun)
     if horizontal:
       ax.text(0.5,0.5,textToPrint,
                   horizontalalignment="center",verticalalignment="top",

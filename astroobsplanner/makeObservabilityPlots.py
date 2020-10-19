@@ -2,8 +2,8 @@
 # vim: set fileencoding=utf-8
 
 from matplotlib import pyplot as mpl
-from lookuptarget import lookuptarget
-from observabilityplot import ObservabilityPlot, LegendForObservability
+from .lookuptarget import lookuptarget
+from .observabilityplot import ObservabilityPlot, LegendForObservability
 
 import argparse
 parser = argparse.ArgumentParser(description="Creates an observability report of the objects listed as arguments.")

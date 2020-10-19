@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # vim: set fileencoding=utf-8
 
-from userdatafile import UserDataFileJson
+from .userdatafile import UserDataFileJson
 import pytz
 
 class LocationCache(object):
@@ -37,7 +37,7 @@ class LocationCache(object):
         raise
       tzTmp = pytz.timezone(tz)
     except Exception as e:
-      print e
+      print(e)
       raise LocationError("Time Zone")
     data = self.udfj.readDict()
     data[name] = {
