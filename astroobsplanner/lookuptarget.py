@@ -13,7 +13,7 @@ def lookuptarget(name):
   """
   result = None
   filename = UserDataFileBase("astro-observability-planner","targetcoordcache.txt").getFileName()
-  with open(filename,"a+b") as coordCacheFile:
+  with open(filename,"a+") as coordCacheFile:
     coordCacheReader = csv.reader(coordCacheFile, dialect='excel')
     for entry in coordCacheReader:
       if name.lower() == entry[0]:

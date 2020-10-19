@@ -5,7 +5,7 @@ import datetime
 
 import matplotlib
 matplotlib.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.gridspec
 from .mplsetup import *
@@ -161,7 +161,7 @@ class Gui(object):
         self.gridspec3 = matplotlib.gridspec.GridSpec(2,2)
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.plotFrame)
-        self.canvas.show()
+        self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
         self.obsplot = None
@@ -175,7 +175,7 @@ class Gui(object):
 
         beginDate,endDate = self.getDates()
         if not beginDate or not endDate:
-          self.canvas.show()
+          self.canvas.draw()
           return
 
         locations = self.getLocationData()
@@ -183,13 +183,13 @@ class Gui(object):
         assert(len(locations)>0 and len(locations)<4)
         locations = [l for l in locations if l]
         if len(locations) < 1:
-          self.canvas.show()
+          self.canvas.draw()
           return
 
         targetValids = self.validTargets()
         for t in targetValids:
           if not t:
-            self.canvas.show()
+            #self.canvas.draw()
             return
         targetData = self.getTargetData()
         targetDataToShow = [i for i in targetData if i['enabled']]
@@ -247,7 +247,7 @@ class Gui(object):
                                         horizontal = len(locations)==1
                               )
 
-        self.canvas.show()
+        self.canvas.draw()
 
     def validTargets(self):
         return [conf.status() for conf in self.targetConfigs if conf.isAlive() and not conf.nameEmpty()]
