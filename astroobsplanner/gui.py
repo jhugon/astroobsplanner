@@ -220,7 +220,7 @@ class Gui(object):
           mplSetupSmall()
           axLeg = self.fig.add_subplot(self.gridspec3[1,1])
           for iLoc, location in enumerate(locations):
-            iGridSpecLoc = (iLoc / 2,iLoc % 2)
+            iGridSpecLoc = (iLoc // 2,iLoc % 2)
             ax = self.fig.add_subplot(self.gridspec3[iGridSpecLoc])
             self.obsplot = ObservabilityPlot(
                       location,
