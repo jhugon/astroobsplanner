@@ -24,7 +24,10 @@ setup(name='astroobsplanner',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         ],
-      entry_points = {'gui_scripts':['astroobsplanner = astroobsplanner:main']},
+      entry_points = {
+        'gui_scripts':['astroobsplanner = astroobsplanner:main'],
+        'console_scripts':['astroobsplannercmd = astroobsplanner.makeobsplot:main']
+      },
       provides=['astroobsplanner'],
       setup_requires = requires,
       install_requires = requires,
