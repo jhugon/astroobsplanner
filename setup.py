@@ -6,7 +6,7 @@ readmeLocation = os.path.join(os.path.dirname(__file__), "README.rst")
 with open(readmeLocation) as readmeFile:
   long_description = readmeFile.read()
 
-requires=['numpy','matplotlib','pytz','pyephem','astropy']
+requires=['numpy','matplotlib','pytz','pyephem','astropy',"skyfield"]
 
 setup(name='astroobsplanner',
       description='Astronomy Observability Planner',
@@ -26,7 +26,10 @@ setup(name='astroobsplanner',
         ],
       entry_points = {
         'gui_scripts':['astroobsplanner = astroobsplanner:main'],
-        'console_scripts':['astroobsplannercmd = astroobsplanner.makeobsplot:main']
+        'console_scripts':[
+            'astroobsplannercmd = astroobsplanner.makeobsplot:main',
+            'astroobsplanneraltcmd = astroobsplanner.makealtplot:main',
+        ]
       },
       provides=['astroobsplanner'],
       setup_requires = requires,
