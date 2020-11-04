@@ -56,16 +56,11 @@ def plot(ax,t,alt,moondiff,name):
     if (alt < 0).all():
         ax.text(0.5,0.5,name+"\nNot\nVisible",transform=ax.transAxes,fontsize="x-large",ha="center",va="center")
     else:
-        ax.plot(t.toordinal(),alt,"-b")
+        ax.plot(t,alt,"-b")
         if not (moondiff is None):
-            ax.plot(t.toordinal(),moondiff/2.,":r")
+            ax.plot(t,moondiff/2.,":r")
         ax.axhline(45,ls="--",c="0.5")
     ax.set_ylim(0,90)
-    ax.set_ylabel(name+" Alt [$^\circ$]")
-    ax.xaxis.set_major_locator(HourLocator([0]))
-    ax.xaxis.set_minor_locator(HourLocator([0,12]))
-    ax.xaxis.set_major_formatter(DateFormatter("\n%a %d"))
-    ax.xaxis.set_minor_formatter(DateFormatter("%Hh"))
 
 def main():
     import sys
@@ -129,17 +124,26 @@ def main():
         for iCoord, name, coord in zip(range(len(nameList)),nameList, coordList):
             for iNight, t_datetimes in enumerate(t_datetimes_nights_list):
                 ax = axes[iCoord,iNight]
-                t = ts.from_datetimes([tzLoc.localize(x) for x in t_datetimes_nights_list[iNight]])
+                t_datetimes_local = [tzLoc.localize(x) for x in t_datetimes_nights_list[iNight]]
+                t = ts.from_datetimes(t_datetimes_local)
                 alt, moondiff= run(loc,t,coord)
-                plot(ax,t,alt,moondiff,name)
-
+                plot(ax,t_datetimes_local,alt,moondiff,name)
+                if iNight == 0:
+                    ax.set_ylabel(name+" Alt [$^\circ$]")
+        # last row is the moon
         for iNight, t_datetimes in enumerate(t_datetimes_nights_list):
-            moon_ax = axes[-1,iNight]
-            t = ts.from_datetimes([tzLoc.localize(x) for x in t_datetimes_nights_list[iNight]])
+            ax = axes[-1,iNight]
+            t_datetimes_local = [tzLoc.localize(x) for x in t_datetimes_nights_list[iNight]]
+            t = ts.from_datetimes(t_datetimes_local)
             moon_alt = run_moon(loc,t)
-            plot(moon_ax,t,moon_alt,None,"Moon")
+            plot(ax,t_datetimes_local,moon_alt,None,"Moon")
+            if iNight == 0:
+                ax.set_ylabel("Moon Alt [$^\circ$]")
+            ax.xaxis.set_major_formatter(DateFormatter("%Hh",tz=tzLoc))
+            ax.xaxis.set_major_locator(HourLocator(range(0,24,6),tz=tzLoc))
+            ax.xaxis.set_minor_locator(HourLocator(range(0,24,2),tz=tzLoc))
+            ax.set_xlabel(t_datetimes_local[0].strftime("N of %a %b %d"))
         fig.suptitle(locName+" (Moondiff is /2)")
         fig.savefig(args.outFileNames[0])
-        
         break
         
