@@ -82,7 +82,9 @@ def plot(ax,t,alt,moondiff,name):
     else:
         ax.plot(t,alt,"-b")
         if not (moondiff is None):
-            ax.plot(t,moondiff/2.,":r")
+            #ax.plot(t,moondiff/2.,":r")
+            print("minimum moondiff: ",moondiff.min())
+            ax.text(0.99,0.99,"Moon $\\measuredangle$ $\\geq${:.0f}$^\\circ$".format(moondiff.min()),fontsize="small",transform=ax.transAxes,ha="right",va="top")
         ax.axhline(45,ls="--",c="0.5")
     ax.set_ylim(0,90)
 
@@ -96,7 +98,7 @@ def main():
     import pytz
     
     import argparse
-    parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an astronomical object versus time. Only shows astronomical night, i.e. when astronomical twilight ends to when it starts again. Local time is displayed on the x-axis for the following 5 nights.")
+    parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an astronomical object versus time. Only shows astronomical night, i.e. when astronomical twilight ends to when it starts again. Local time is displayed on the x-axis for the following 5 nights. The minimum seperation of an object with the moon is displayed for each day.")
     parser.add_argument("outFileNames",metavar="out",nargs=1,help="Output file name (e.g. report1.png)")
     parser.add_argument("objectNames",metavar="object",nargs='+',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
     parser.add_argument("--minAltSun",type=float,default=-18.0,help="Minimum sun Alt to be considered day or twilight, in degrees (default: -18.0, astronomical twilight)")
@@ -174,7 +176,7 @@ def main():
             ax.set_xlabel(t[0].astimezone(tzLoc).strftime("N of %a %b %d"))
             ax.set_xlim(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
             #print(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
-        fig.suptitle(locName+" (Moondiff is /2)")
+        fig.suptitle(locName)
         fig.savefig(args.outFileNames[0])
         break
         
