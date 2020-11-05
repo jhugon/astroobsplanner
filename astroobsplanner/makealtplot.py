@@ -6,8 +6,28 @@ from skyfield.starlib import Star
 from skyfield import almanac
 from matplotlib.dates import HourLocator, DateFormatter
 
-def find_twilight(nights):
-    pass
+def find_twilight(location,t_timescale_nights_local_list):
+    planets = load("de421.bsp")
+    topo = Topos(location["latitude"],location["longitude"],elevation_m=location["elevation"])
+    result = []
+    for  t_night in t_timescale_nights_local_list:
+        t_start = t_night[0]
+        t_end = t_night[-1]
+        f = almanac.dark_twilight_day(planets,topo)
+        ts, twilight_types = almanac.find_discrete(t_start,t_end,f)
+        t_night_start = None
+        t_night_end = None
+        for t, twilight_type in zip(ts, twilight_types):
+            #print(twilight_type, t, t.utc_iso(), ' Start of', almanac.TWILIGHTS[twilight_type])
+            # exclude all twilight, just full dark night
+            # relies on start of night, twilight, day, etc being in order
+            if twilight_type == 0: # start of night
+                t_night_start = t
+            elif not (t_night_start is None) and twilight_type == 1: # start of astro twilight after start of night
+                t_night_end = t
+                break
+        result.append((t_night_start,t_night_end))
+    return result
 
 def run(location,t,target):
     """
@@ -76,7 +96,7 @@ def main():
     import pytz
     
     import argparse
-    parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an object versus time.")
+    parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an astronomical object versus time. Only shows astronomical night, i.e. when astronomical twilight ends to when it starts again. Local time is displayed on the x-axis for the following 5 nights.")
     parser.add_argument("outFileNames",metavar="out",nargs=1,help="Output file name (e.g. report1.png)")
     parser.add_argument("objectNames",metavar="object",nargs='+',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
     parser.add_argument("--minAltSun",type=float,default=-18.0,help="Minimum sun Alt to be considered day or twilight, in degrees (default: -18.0, astronomical twilight)")
@@ -126,7 +146,7 @@ def main():
             t_ts_local = ts.from_datetimes(t_datetimes_local)
             t_ts_nights_local_list.append(t_ts_local)
 
-        find_twilight(t_datetimes_nights_list)
+        twilight_times = find_twilight(loc,t_ts_nights_local_list)
         fig, axes = mpl.subplots(
             figsize=(8.5,11),
             nrows=len(coordList)+1,ncols=len(t_datetimes_nights_list),
@@ -135,23 +155,25 @@ def main():
             squeeze=False,constrained_layout=False
         )
         for iCoord, name, coord in zip(range(len(nameList)),nameList, coordList):
-            for iNight, (t,t_datetimes_local) in enumerate(zip(t_ts_nights_local_list,t_datetimes_nights_local_list)):
+            for iNight, t in enumerate(t_ts_nights_local_list):
                 ax = axes[iCoord,iNight]
                 alt, moondiff= run(loc,t,coord)
-                plot(ax,t_datetimes_local,alt,moondiff,name)
+                plot(ax,t.astimezone(tzLoc),alt,moondiff,name)
                 if iNight == 0:
                     ax.set_ylabel(name+" Alt [$^\circ$]")
         # last row is the moon
-        for iNight, (t,t_datetimes_local) in enumerate(zip(t_ts_nights_local_list,t_datetimes_nights_local_list)):
+        for iNight, (t, (night_start, night_end)) in enumerate(zip(t_ts_nights_local_list,twilight_times)):
             ax = axes[-1,iNight]
             moon_alt = run_moon(loc,t)
-            plot(ax,t_datetimes_local,moon_alt,None,"Moon")
+            plot(ax,t.astimezone(tzLoc),moon_alt,None,"Moon")
             if iNight == 0:
                 ax.set_ylabel("Moon Alt [$^\circ$]")
             ax.xaxis.set_major_formatter(DateFormatter("%Hh",tz=tzLoc))
-            ax.xaxis.set_major_locator(HourLocator(range(0,24,6),tz=tzLoc))
-            ax.xaxis.set_minor_locator(HourLocator(range(0,24,2),tz=tzLoc))
-            ax.set_xlabel(t_datetimes_local[0].strftime("N of %a %b %d"))
+            ax.xaxis.set_major_locator(HourLocator(range(0,24,3),tz=tzLoc))
+            ax.xaxis.set_minor_locator(HourLocator(range(0,24,1),tz=tzLoc))
+            ax.set_xlabel(t[0].astimezone(tzLoc).strftime("N of %a %b %d"))
+            ax.set_xlim(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
+            #print(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
         fig.suptitle(locName+" (Moondiff is /2)")
         fig.savefig(args.outFileNames[0])
         break
