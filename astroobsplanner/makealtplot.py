@@ -94,6 +94,7 @@ def main():
     import sys
     from matplotlib import pyplot as mpl
     import matplotlib
+    from matplotlib.backends.backend_pdf import PdfPages
     from .lookuptarget import lookuptarget
     from .observabilityplot import ObservabilityPlot
     from .observabilitylegend import LegendForObservability
@@ -117,7 +118,7 @@ def main():
       "AstroCampSpain" : {"latitude":38.15,"longitude":-2.31,"elevation":1650,"tz":'Europe/Madrid'},
                     #31° 16' 24" South, 149° 03' 52" East
       "SidingSpringAustralia" : {"latitude":-31.273333333333333,"longitude":149.06444444444446,"elevation":1165,"tz":'Australia/Melbourne'},
-      "RandomAntarctica"  : {"latitude":-75.320077, "longitude":-75.548212,"elevation":0,"tz":'UTC'},
+      #"RandomAntarctica"  : {"latitude":-75.320077, "longitude":-75.548212,"elevation":0,"tz":'UTC'},
     
     }
     
@@ -140,59 +141,59 @@ def main():
             currTime += datetime.timedelta(minutes=15)
         t_datetimes_nights_list.append(t_datetime)
 
-    for locName in locationDict:
-        loc = locationDict[locName]
-        tzLoc = pytz.timezone(loc["tz"])
-        t_datetimes_nights_local_list = []
-        t_ts_nights_local_list = []
-        for iNight, t_datetimes in enumerate(t_datetimes_nights_list):
-            t_datetimes_local = [tzLoc.localize(x) for x in t_datetimes]
-            t_datetimes_nights_local_list.append(t_datetimes_local)
-            t_ts_local = ts.from_datetimes(t_datetimes_local)
-            t_ts_nights_local_list.append(t_ts_local)
+    with PdfPages(args.outFileNames[0]) as pdf:
+        for locName in locationDict:
+            loc = locationDict[locName]
+            tzLoc = pytz.timezone(loc["tz"])
+            t_datetimes_nights_local_list = []
+            t_ts_nights_local_list = []
+            for iNight, t_datetimes in enumerate(t_datetimes_nights_list):
+                t_datetimes_local = [tzLoc.localize(x) for x in t_datetimes]
+                t_datetimes_nights_local_list.append(t_datetimes_local)
+                t_ts_local = ts.from_datetimes(t_datetimes_local)
+                t_ts_nights_local_list.append(t_ts_local)
 
-        twilight_times = find_twilight(loc,t_ts_nights_local_list)
-        fig, axes = mpl.subplots(
-            figsize=(8.5,11),
-            nrows=len(coordList)+1,ncols=len(t_datetimes_nights_list),
-            sharex="col",sharey="row",
-            gridspec_kw={
-                "top":0.95,
-                "bottom":0.05,
-                "left":0.07,
-                "right":0.98,
-                "hspace":0,
-                "wspace":0
-            },
-            squeeze=False,
-            tight_layout=False,constrained_layout=False
-        )
-        for iCoord, name, coord in zip(range(len(nameList)),nameList, coordList):
-            for iNight, t in enumerate(t_ts_nights_local_list):
-                ax = axes[iCoord,iNight]
-                alt, moondiff= run(loc,t,coord)
-                plot(ax,t.astimezone(tzLoc),alt,moondiff,name)
+            twilight_times = find_twilight(loc,t_ts_nights_local_list)
+            fig, axes = mpl.subplots(
+                figsize=(8.5,11),
+                nrows=len(coordList)+1,ncols=len(t_datetimes_nights_list),
+                sharex="col",sharey="row",
+                gridspec_kw={
+                    "top":0.95,
+                    "bottom":0.05,
+                    "left":0.07,
+                    "right":0.98,
+                    "hspace":0,
+                    "wspace":0
+                },
+                squeeze=False,
+                tight_layout=False,constrained_layout=False
+            )
+            for iCoord, name, coord in zip(range(len(nameList)),nameList, coordList):
+                for iNight, t in enumerate(t_ts_nights_local_list):
+                    ax = axes[iCoord,iNight]
+                    alt, moondiff= run(loc,t,coord)
+                    plot(ax,t.astimezone(tzLoc),alt,moondiff,name)
+                    if iNight == 0:
+                        ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(0,90,45)))
+                        ax.yaxis.set_minor_locator(matplotlib.ticker.FixedLocator(range(0,90,15)))
+                        ax.set_ylabel(name)
+            # last row is the moon
+            for iNight, (t, (night_start, night_end)) in enumerate(zip(t_ts_nights_local_list,twilight_times)):
+                ax = axes[-1,iNight]
+                moon_alt, moon_phases = run_moon(loc,t)
+                plot(ax,t.astimezone(tzLoc),moon_alt,None,"Moon")
                 if iNight == 0:
-                    ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(0,90,45)))
-                    ax.yaxis.set_minor_locator(matplotlib.ticker.FixedLocator(range(0,90,15)))
-                    ax.set_ylabel(name)
-        # last row is the moon
-        for iNight, (t, (night_start, night_end)) in enumerate(zip(t_ts_nights_local_list,twilight_times)):
-            ax = axes[-1,iNight]
-            moon_alt, moon_phases = run_moon(loc,t)
-            plot(ax,t.astimezone(tzLoc),moon_alt,None,"Moon")
-            if iNight == 0:
-                ax.set_ylabel("Moon")
-            ax.xaxis.set_major_formatter(DateFormatter("%Hh",tz=tzLoc))
-            ax.xaxis.set_major_locator(HourLocator(range(0,24,3),tz=tzLoc))
-            ax.xaxis.set_minor_locator(HourLocator(range(0,24,1),tz=tzLoc))
-            ax.set_xlabel(t[0].astimezone(tzLoc).strftime("N of %a %b %d"))
-            ax.set_xlim(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
-            ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(0,90,45)))
-            ax.yaxis.set_minor_locator(matplotlib.ticker.FixedLocator(range(0,90,15)))
-            #print(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
-            ax.text(0.99,0.99,"Phase: {:.0f}$^\\circ$".format(moon_phases.mean()),fontsize="small",transform=ax.transAxes,ha="right",va="top")
-        fig.suptitle("Astronomical Object Altitude in $^\circ$ at "+locName)
-        fig.savefig(args.outFileNames[0])
-        break
-        
+                    ax.set_ylabel("Moon")
+                ax.xaxis.set_major_formatter(DateFormatter("%Hh",tz=tzLoc))
+                ax.xaxis.set_major_locator(HourLocator(range(0,24,3),tz=tzLoc))
+                ax.xaxis.set_minor_locator(HourLocator(range(0,24,1),tz=tzLoc))
+                ax.set_xlabel(t[0].astimezone(tzLoc).strftime("N of %a %b %d"))
+                ax.set_xlim(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
+                ax.yaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(0,90,45)))
+                ax.yaxis.set_minor_locator(matplotlib.ticker.FixedLocator(range(0,90,15)))
+                #print(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
+                ax.text(0.99,0.99,"Phase: {:.0f}$^\\circ$".format(moon_phases.mean()),fontsize="small",transform=ax.transAxes,ha="right",va="top")
+            fig.suptitle("Astronomical Object Altitude in $^\circ$ at "+locName)
+            pdf.savefig(fig)
+            
