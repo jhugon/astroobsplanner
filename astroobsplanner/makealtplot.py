@@ -3,7 +3,11 @@
 
 from skyfield.api import load, Topos
 from skyfield.starlib import Star
+from skyfield import almanac
 from matplotlib.dates import HourLocator, DateFormatter
+
+def find_twilight(nights):
+    pass
 
 def run(location,t,target):
     """
@@ -114,6 +118,15 @@ def main():
     for locName in locationDict:
         loc = locationDict[locName]
         tzLoc = pytz.timezone(loc["tz"])
+        t_datetimes_nights_local_list = []
+        t_ts_nights_local_list = []
+        for iNight, t_datetimes in enumerate(t_datetimes_nights_list):
+            t_datetimes_local = [tzLoc.localize(x) for x in t_datetimes]
+            t_datetimes_nights_local_list.append(t_datetimes_local)
+            t_ts_local = ts.from_datetimes(t_datetimes_local)
+            t_ts_nights_local_list.append(t_ts_local)
+
+        find_twilight(t_datetimes_nights_list)
         fig, axes = mpl.subplots(
             figsize=(8.5,11),
             nrows=len(coordList)+1,ncols=len(t_datetimes_nights_list),
@@ -122,19 +135,15 @@ def main():
             squeeze=False,constrained_layout=False
         )
         for iCoord, name, coord in zip(range(len(nameList)),nameList, coordList):
-            for iNight, t_datetimes in enumerate(t_datetimes_nights_list):
+            for iNight, (t,t_datetimes_local) in enumerate(zip(t_ts_nights_local_list,t_datetimes_nights_local_list)):
                 ax = axes[iCoord,iNight]
-                t_datetimes_local = [tzLoc.localize(x) for x in t_datetimes_nights_list[iNight]]
-                t = ts.from_datetimes(t_datetimes_local)
                 alt, moondiff= run(loc,t,coord)
                 plot(ax,t_datetimes_local,alt,moondiff,name)
                 if iNight == 0:
                     ax.set_ylabel(name+" Alt [$^\circ$]")
         # last row is the moon
-        for iNight, t_datetimes in enumerate(t_datetimes_nights_list):
+        for iNight, (t,t_datetimes_local) in enumerate(zip(t_ts_nights_local_list,t_datetimes_nights_local_list)):
             ax = axes[-1,iNight]
-            t_datetimes_local = [tzLoc.localize(x) for x in t_datetimes_nights_list[iNight]]
-            t = ts.from_datetimes(t_datetimes_local)
             moon_alt = run_moon(loc,t)
             plot(ax,t_datetimes_local,moon_alt,None,"Moon")
             if iNight == 0:
