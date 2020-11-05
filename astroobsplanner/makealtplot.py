@@ -65,6 +65,7 @@ def run_moon(location,t):
 
     planets = load("de421.bsp")
     earth = planets["earth"]
+    sun = planets["sun"]
     moon = planets["moon"]
 
     loc = earth+Topos(location["latitude"],location["longitude"],elevation_m=location["elevation"])
@@ -74,7 +75,10 @@ def run_moon(location,t):
     alt, _, _ = moon_app_pos.altaz()
     alt = alt.degrees # convert from skyfield.units.Angle to float degrees
 
-    return alt
+    _, slon, _ = earth.at(t).observe(sun).apparent().ecliptic_latlon()
+    _, mlon, _ = earth.at(t).observe(moon).apparent().ecliptic_latlon()
+    moon_phases = (mlon.degrees- slon.degrees) % 360.
+    return alt, moon_phases
 
 def plot(ax,t,alt,moondiff,name):
     if (alt < 0).all():
@@ -82,8 +86,6 @@ def plot(ax,t,alt,moondiff,name):
     else:
         ax.plot(t,alt,"-b")
         if not (moondiff is None):
-            #ax.plot(t,moondiff/2.,":r")
-            print("minimum moondiff: ",moondiff.min())
             ax.text(0.99,0.99,"Moon $\\measuredangle$ $\\geq${:.0f}$^\\circ$".format(moondiff.min()),fontsize="small",transform=ax.transAxes,ha="right",va="top")
         ax.axhline(45,ls="--",c="0.5")
     ax.set_ylim(0,90)
@@ -98,7 +100,7 @@ def main():
     import pytz
     
     import argparse
-    parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an astronomical object versus time. Only shows astronomical night, i.e. when astronomical twilight ends to when it starts again. Local time is displayed on the x-axis for the following 5 nights. The minimum seperation of an object with the moon is displayed for each day.")
+    parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an astronomical object versus time. Only shows astronomical night, i.e. when astronomical twilight ends to when it starts again. Local time is displayed on the x-axis for the following 5 nights. The minimum seperation of an object with the moon is displayed for each day. The lunar phase is displayed in degrees with 0 deg being new moon and 180 deg being full moon.")
     parser.add_argument("outFileNames",metavar="out",nargs=1,help="Output file name (e.g. report1.png)")
     parser.add_argument("objectNames",metavar="object",nargs='+',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
     parser.add_argument("--minAltSun",type=float,default=-18.0,help="Minimum sun Alt to be considered day or twilight, in degrees (default: -18.0, astronomical twilight)")
@@ -166,7 +168,7 @@ def main():
         # last row is the moon
         for iNight, (t, (night_start, night_end)) in enumerate(zip(t_ts_nights_local_list,twilight_times)):
             ax = axes[-1,iNight]
-            moon_alt = run_moon(loc,t)
+            moon_alt, moon_phases = run_moon(loc,t)
             plot(ax,t.astimezone(tzLoc),moon_alt,None,"Moon")
             if iNight == 0:
                 ax.set_ylabel("Moon Alt [$^\circ$]")
@@ -176,6 +178,7 @@ def main():
             ax.set_xlabel(t[0].astimezone(tzLoc).strftime("N of %a %b %d"))
             ax.set_xlim(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
             #print(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
+            ax.text(0.99,0.99,"Phase: {:.0f}$^\\circ$".format(moon_phases.mean()),fontsize="small",transform=ax.transAxes,ha="right",va="top")
         fig.suptitle(locName)
         fig.savefig(args.outFileNames[0])
         break
