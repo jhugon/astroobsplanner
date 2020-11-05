@@ -105,7 +105,8 @@ def main():
     parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an astronomical object versus time. Only shows astronomical night, i.e. when astronomical twilight ends to when it starts again. Local time is displayed on the x-axis for the following 5 nights. The minimum seperation of an object with the moon is displayed for each day. The lunar phase is displayed in degrees with 0 deg being new moon and 180 deg being full moon.")
     parser.add_argument("outFileNames",metavar="out",nargs=1,help="Output file name (e.g. report1.png)")
     parser.add_argument("objectNames",metavar="object",nargs='+',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
-    parser.add_argument("--minAltSun",type=float,default=-18.0,help="Minimum sun Alt to be considered day or twilight, in degrees (default: -18.0, astronomical twilight)")
+    parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
+    parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
     parser.add_argument("--bw",action="store_true",help="Black and white mode.")
     args = parser.parse_args()
     assert(len(args.outFileNames)>0)
@@ -121,17 +122,14 @@ def main():
       #"RandomAntarctica"  : {"latitude":-75.320077, "longitude":-75.548212,"elevation":0,"tz":'UTC'},
     
     }
-    
-    nameList = args.objectNames
-    coordList = [lookuptarget(x) for x in nameList]
-    
+
     # Do from 4 PM to 8 AM for the next 5 days
-    now = datetime.datetime.now()
-    beginTimeFirstNight = datetime.datetime(now.year,now.month,now.day,hour=16)
+    startDate = datetime.datetime.strptime(args.startDate,"%Y-%m-%d")
+    beginTimeFirstNight = datetime.datetime(startDate.year,startDate.month,startDate.day,hour=16)
     endTimeFirstNight = beginTimeFirstNight + datetime.timedelta(hours=16)
     ts = load.timescale()
     t_datetimes_nights_list = []
-    for iDay in range(5):
+    for iDay in range(args.nNights):
         t_datetime = []
         beginTime = beginTimeFirstNight + datetime.timedelta(days=iDay)
         endTime = endTimeFirstNight + datetime.timedelta(days=iDay)
@@ -141,6 +139,10 @@ def main():
             currTime += datetime.timedelta(minutes=15)
         t_datetimes_nights_list.append(t_datetime)
 
+    
+    nameList = args.objectNames
+    coordList = [lookuptarget(x) for x in nameList]
+    
     with PdfPages(args.outFileNames[0]) as pdf:
         for locName in locationDict:
             loc = locationDict[locName]
@@ -194,6 +196,6 @@ def main():
                 ax.yaxis.set_minor_locator(matplotlib.ticker.FixedLocator(range(0,90,15)))
                 #print(night_start.astimezone(tzLoc),night_end.astimezone(tzLoc))
                 ax.text(0.99,0.99,"Phase: {:.0f}$^\\circ$".format(moon_phases.mean()),fontsize="small",transform=ax.transAxes,ha="right",va="top")
-            fig.suptitle("Astronomical Object Altitude in $^\circ$ at "+locName)
+            fig.suptitle(f"Astronomical Object Altitude in $^\circ$ at {locName} in {startDate.year}")
             pdf.savefig(fig)
             
