@@ -115,6 +115,8 @@ def main():
     locationDict = {
                     #32° 54' 11.91" North, 105° 31' 43.32" West
       "NMSkies" : {"latitude":32.903308333333335,"longitude":-106.96066666666667,"elevation":2225.,"tz":'US/Mountain'},
+                    #37° 04' 13.00" North, 119° 24' 46.00" West
+      "SierraRemoteObsCalifornia" : {"latitude":37.0703,"longitude":-119.4128,"elevation":1405.,"tz":'US/Pacific'},
                     #38° 09' North, 002° 19' West
       "AstroCampSpain" : {"latitude":38.15,"longitude":-2.31,"elevation":1650,"tz":'Europe/Madrid'},
                     #31° 16' 24" South, 149° 03' 52" East
