@@ -1,124 +1,15 @@
 import sys
 import csv
+import time
 import ephem
+
 from astropy.coordinates import get_icrs_coordinates, SkyCoord
 from astropy.coordinates.name_resolve import NameResolveError
+from astroquery.simbad import Simbad
+
 from .userdatafile import UserDataFileBase
 
 CALDWELL_MAP = {
-#  "Caldwell 1" : "188",
-#  "Caldwell 2" : "40",
-#  "Caldwell 3" : "4236",
-#  "Caldwell 4" : "7023",
-#  "Caldwell 5" : "I342",
-#  "Caldwell 6" : "6543",
-#  "Caldwell 7" : "2403",
-#  "Caldwell 8" : "559",
-#  "Caldwell 9" : "Sh2-155",
-#  "Caldwell 10" : "663",
-#  "Caldwell 11" : "7635",
-#  "Caldwell 12" : "6946",
-#  "Caldwell 13" : "457",
-#  "Caldwell 14" : "869",
-#  "Caldwell 15" : "6826",
-#  "Caldwell 16" : "7243",
-#  "Caldwell 17" : "147",
-#  "Caldwell 18" : "185",
-#  "Caldwell 19" : "I5146",
-#  "Caldwell 20" : "7000",
-#  "Caldwell 21" : "4449",
-#  "Caldwell 22" : "7662",
-#  "Caldwell 23" : "891",
-#  "Caldwell 24" : "1275",
-#  "Caldwell 25" : "2419",
-#  "Caldwell 26" : "4244",
-#  "Caldwell 27" : "6888",
-#  "Caldwell 28" : "752",
-#  "Caldwell 29" : "5005",
-#  "Caldwell 30" : "7331",
-#  "Caldwell 31" : "I405",
-#  "Caldwell 32" : "4631",
-#  "Caldwell 33" : "6992",
-#  "Caldwell 34" : "6960",
-#  "Caldwell 35" : "4889",
-#  "Caldwell 36" : "4559",
-#  "Caldwell 37" : "6885",
-#  "Caldwell 38" : "4565",
-#  "Caldwell 39" : "2392",
-#  "Caldwell 40" : "3626",
-#  "Caldwell 41" : "Mel 25",
-#  "Caldwell 42" : "7006",
-#  "Caldwell 43" : "7814",
-#  "Caldwell 44" : "7479",
-#  "Caldwell 45" : "5248",
-#  "Caldwell 46" : "2261",
-#  "Caldwell 47" : "6934",
-#  "Caldwell 48" : "2775",
-#  "Caldwell 49" : "2237",
-#  "Caldwell 50" : "2244",
-#  "Caldwell 51" : "I1613",
-#  "Caldwell 52" : "4697",
-#  "Caldwell 53" : "3115",
-#  "Caldwell 54" : "2506",
-#  "Caldwell 55" : "7009",
-#  "Caldwell 56" : "246",
-#  "Caldwell 57" : "6822",
-#  "Caldwell 58" : "2360",
-#  "Caldwell 59" : "3242",
-#  "Caldwell 60" : "4038",
-#  "Caldwell 61" : "4039",
-#  "Caldwell 62" : "247",
-#  "Caldwell 63" : "7293",
-#  "Caldwell 64" : "2362",
-#  "Caldwell 65" : "253",
-#  "Caldwell 66" : "5694",
-#  "Caldwell 67" : "1097",
-#  "Caldwell 68" : "6729",
-#  "Caldwell 69" : "6302",
-#  "Caldwell 70" : "300",
-#  "Caldwell 71" : "2477",
-#  "Caldwell 72" : "55",
-#  "Caldwell 73" : "1851",
-#  "Caldwell 74" : "3132",
-#  "Caldwell 75" : "6124",
-#  "Caldwell 76" : "6231",
-#  "Caldwell 77" : "5128",
-#  "Caldwell 78" : "6541",
-#  "Caldwell 79" : "3201",
-#  "Caldwell 80" : "5139",
-#  "Caldwell 81" : "6352",
-#  "Caldwell 82" : "6193",
-#  "Caldwell 83" : "4945",
-#  "Caldwell 84" : "5286",
-#  "Caldwell 85" : "I2391",
-#  "Caldwell 86" : "6397",
-#  "Caldwell 87" : "1261",
-#  "Caldwell 88" : "5823",
-#  "Caldwell 89" : "6067",
-#  "Caldwell 90" : "2867",
-#  "Caldwell 91" : "3532",
-#  "Caldwell 92" : "3372",
-#  "Caldwell 93" : "6752",
-#  "Caldwell 94" : "4755",
-#  "Caldwell 95" : "6025",
-#  "Caldwell 96" : "2516",
-#  "Caldwell 97" : "3766",
-#  "Caldwell 98" : "4609",
-#  "Caldwell 99" : "Coalsack",
-#  "Caldwell 100" : "I2944",
-#  "Caldwell 101" : "6744",
-#  "Caldwell 102" : "I2602",
-#  "Caldwell 103" : "2070",
-#  "Caldwell 104" : "362",
-#  "Caldwell 105" : "4833",
-#  "Caldwell 106" : "104",
-#  "Caldwell 107" : "6101",
-#  "Caldwell 108" : "4372",
-#  "Caldwell 109" : "3195",
-#
-#
-#
-#
   "caldwell 1": "ngc188",
   "caldwell 2": "ngc40",
   "caldwell 3": "ngc4236",
@@ -394,3 +285,34 @@ def lookuptargetxephem(name):
     return ephem.Pluto()
   else:
     return ephem.readdb(skycoordtoephemStr(lookuptarget(name)))
+
+def lookuptargettype(name):
+  """
+    Looks up target otype from SIMBAD
+  """
+  result = None
+  filename = UserDataFileBase("astro-observability-planner","targettypecache.txt").getFileName()
+  mysimbad = Simbad()
+  mysimbad.remove_votable_fields('coordinates')
+  mysimbad.add_votable_fields("otype","otypes")
+  with open(filename,"a+") as typeCacheFile:
+    typeCacheFile.seek(0)
+    typeCacheReader = csv.reader(typeCacheFile, dialect='excel')
+    for entry in typeCacheReader:
+      if name.lower() == entry[0]:
+        result = entry[1]
+    if not result:
+      try:
+        lookupname = CALDWELL_MAP[name.lower()]
+      except KeyError:
+        lookupname = name
+      finally:
+        time.sleep(0.05)
+        result_table = mysimbad.query_object(lookupname)
+        result = result_table["OTYPE"][0].decode()
+        extra_types = result_table["OTYPES"][0].decode()
+        typeCacheWriter = csv.writer(typeCacheFile, dialect='excel')
+        typeCacheWriter.writerow([name.lower(),result,extra_types])
+        if lookupname != name:
+            typeCacheWriter.writerow([lookupname.lower(),result,extra_types])
+  return result
