@@ -4,10 +4,11 @@
 import sys
 import argparse
 import datetime
-import pytz
 import numpy
+
 from matplotlib import pyplot as mpl
 from matplotlib.dates import HourLocator, DateFormatter
+from matplotlib.backends.backend_pdf import PdfPages
 
 from astropy.time import Time
 from astropy.table import Table
@@ -37,46 +38,48 @@ def run_months(observers, nameList, outFileNameBase):
     constraints = [
         AltitudeConstraint(min=minAlt*u.deg),
         AtNightConstraint.twilight_astronomical(),
-        MoonSeparationConstraint(min=minMoonSep*u.deg),
+        #MoonSeparationConstraint(min=minMoonSep*u.deg),
     ]
     
-    for observer in observers:
-        observability_months_table = months_observable(constraints,observer,targets)
+    outfn = outFileNameBase+"_monthly.pdf"
+    with PdfPages(outfn) as pdf:
+        for observer in observers:
+            observability_months_table = months_observable(constraints,observer,targets)
 
-        observability_months_grid = numpy.zeros((len(targets),12))
-        for i, observable in enumerate(observability_months_table):
-            for jMonth in range(1,13):
-                observability_months_grid[i,jMonth-1] = jMonth in observable
+            observability_months_grid = numpy.zeros((len(targets),12))
+            for i, observable in enumerate(observability_months_table):
+                for jMonth in range(1,13):
+                    observability_months_grid[i,jMonth-1] = jMonth in observable
 
-        fig, ax = mpl.subplots(
-            figsize=(8.5,11),
-            gridspec_kw={
-                "top":0.92,
-                "bottom":0.03,
-                "left":0.13,
-                "right":0.98,
-            },
-            tight_layout=False,constrained_layout=False
-        )
-        extent = [-0.5, -0.5+12, -0.5, len(targets)-0.5]
-        ax.imshow(observability_months_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
-        ax.xaxis.tick_top()
-        ax.invert_yaxis()
-        ax.set_yticks(range(0,len(targets)))
-        ax.set_yticklabels(targetLabelList, fontsize=ylabelsize)
-        ax.set_xticks(range(12))
-        ax.set_xticklabels(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"])
-        ax.set_xticks(numpy.arange(extent[0], extent[1]), minor=True)
-        ax.set_yticks(numpy.arange(extent[2], extent[3]), minor=True)
-        ax.grid(which="minor",color="white",ls="-", linewidth=2)
-        ax.tick_params(axis='y', which='minor', left='off')
-        ax.tick_params(axis='x', which='minor', bottom='off')
-    
-        fig.suptitle(f"Monthly Observability from {observer.name}")
-        fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
-        outfn = outFileNameBase+"_monthly.pdf"
+            fig, ax = mpl.subplots(
+                figsize=(8.5,11),
+                gridspec_kw={
+                    "top":0.92,
+                    "bottom":0.03,
+                    "left":0.13,
+                    "right":0.98,
+                },
+                tight_layout=False,constrained_layout=False
+            )
+            extent = [-0.5, -0.5+12, -0.5, len(targets)-0.5]
+            ax.imshow(observability_months_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
+            ax.xaxis.tick_top()
+            ax.invert_yaxis()
+            ax.set_yticks(range(0,len(targets)))
+            ax.set_yticklabels(targetLabelList, fontsize=ylabelsize)
+            ax.set_xticks(range(12))
+            ax.set_xticklabels(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"])
+            ax.set_xticks(numpy.arange(extent[0], extent[1]), minor=True)
+            ax.set_yticks(numpy.arange(extent[2], extent[3]), minor=True)
+            ax.grid(which="minor",color="white",ls="-", linewidth=2)
+            ax.tick_params(axis='y', which='minor', left='off')
+            ax.tick_params(axis='x', which='minor', bottom='off')
+        
+            fig.suptitle(f"Monthly Observability from {observer.name}")
+            #fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
+            fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$".format(minAlt),ha="right",va="bottom")
+            pdf.savefig(fig)
         print(f"Writing out file: {outfn}")
-        fig.savefig(outfn)
         
 
 def main():
@@ -94,7 +97,10 @@ def main():
     args = parser.parse_args()
 
     observers = [
-            Observer(name="NMSkies",latitude=32.903308333333335*u.deg,longitude=-106.96066666666667*u.deg,elevation=2225.*u.meter,timezone='US/Mountain'),
+            Observer(name="NM Skies",latitude=32.903308333333335*u.deg,longitude=-106.96066666666667*u.deg,elevation=2225.*u.meter,timezone='US/Mountain'),
+            Observer(name="Sierra Remote Obs., CA",latitude=37.0703*u.deg,longitude=-119.4128*u.deg,elevation=1405.*u.meter,timezone='US/Pacific'),
+            Observer(name="AstroCamp, Spain",latitude=38.15*u.deg,longitude=-2.31*u.deg,elevation=1650.*u.meter,timezone='Europe/Madrid'),
+            Observer(name="Siding Spring, AUS",latitude=-31.27333*u.deg,longitude=-149.064444*u.deg,elevation=1165.*u.meter,timezone='Australia/Melbourne'),
     ]
 
     #time_range = Time(["2020-11-01 00:00", "2021-10-31 00:00"])
