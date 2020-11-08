@@ -77,7 +77,7 @@ def run_months(observers, nameList, outFileNameBase):
             ax.tick_params(axis='y', which='minor', left=False, right=False)
             ax.tick_params(axis='x', which='minor', bottom=False, top=False)
         
-            fig.suptitle(f"Monthly Observability from {observer.name}")
+            fig.suptitle(f"Monthly Observability at {observer.name}")
             #fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
             fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$".format(minAlt),ha="right",va="bottom")
             pdf.savefig(fig)
@@ -148,6 +148,7 @@ def run_nights(observers, nameList, outFileNameBase, startDate, nNights):
                 extent = [0, len(time_grid)-1, -0.5, len(targets)-0.5]
                 ax.imshow(observability_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
                 ax.xaxis.tick_top()
+                ax.xaxis.set_label_position("top")
                 ax.invert_yaxis()
 
                 if iNight == 0:
@@ -160,6 +161,8 @@ def run_nights(observers, nameList, outFileNameBase, startDate, nNights):
                 ax.set_xticks(range(0,len(t_datetime)),minor=True)
                 ax.set_xticklabels([t_datetime[i].strftime("%Hh") for i in range(0,len(t_datetime)-1,4)])
 
+                ax.set_xlabel(t_datetime[0].strftime("%a %b %d"))
+
                 ax.set_yticks(numpy.arange(extent[2], extent[3]), minor=True)
 
                 ax.grid(axis="x",which="both",color="white",ls="-", linewidth=1)
@@ -168,10 +171,9 @@ def run_nights(observers, nameList, outFileNameBase, startDate, nNights):
                 ax.tick_params(axis='y', which='minor', left=False, right=False)
                 ax.tick_params(axis='x', which='minor', bottom=False, top=False)
         
-            fig.suptitle(f"Observability from {observer.name} on {startDate.strftime('%a %Y-%m-%d')}")
+            fig.suptitle(f"Observability at {observer.name} in {startDate.year}")
             fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
             pdf.savefig(fig)
-            break
         print(f"Writing out file: {outfn}")
 
 
