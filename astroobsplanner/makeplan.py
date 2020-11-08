@@ -83,16 +83,21 @@ def run_months(observers, nameList, outFileNameBase):
             pdf.savefig(fig)
         print(f"Writing out file: {outfn}")
 
-def run_nights(observers, nameList, outFileNameBase, startDate):
+def run_nights(observers, nameList, outFileNameBase, startDate, nNights):
     # Define range of times to observe between
     startDate = datetime.datetime.strptime(startDate,"%Y-%m-%d")
     beginTimeFirstNight = datetime.datetime(startDate.year,startDate.month,startDate.day,hour=16)
     endTimeFirstNight = beginTimeFirstNight + datetime.timedelta(hours=16)
-    currTime = beginTimeFirstNight
-    t_datetime = []
-    while currTime <= endTimeFirstNight:
-        t_datetime.append(currTime)
-        currTime += datetime.timedelta(hours=1)
+    t_datetimes_nights_list = []
+    for iDay in range(nNights):
+        beginTime = beginTimeFirstNight + datetime.timedelta(days=iDay)
+        endTime = endTimeFirstNight + datetime.timedelta(days=iDay)
+        currTime = beginTime
+        t_datetime = []
+        while currTime <= endTime:
+            t_datetime.append(currTime)
+            currTime += datetime.timedelta(hours=1)
+        t_datetimes_nights_list.append(t_datetime)
 
     targets = [FixedTarget(coord=lookuptarget(name),name=name) for name in nameList]
     targetTypes = [lookuptargettype(name) for name in nameList]
@@ -117,44 +122,56 @@ def run_nights(observers, nameList, outFileNameBase, startDate):
     outfn = outFileNameBase+"_nightly.pdf"
     with PdfPages(outfn) as pdf:
         for observer in observers:
-            time_grid = [Time(observer.timezone.localize(t)) for t in t_datetime]
-            
-            observability_grid = numpy.zeros((len(targets),len(time_grid)-1))
-            for i in range(len(time_grid)-1):
-                observability_grid[:, i] = is_always_observable(constraints, observer, targets, times=[time_grid[i],time_grid[i+1]])
-
-            fig, ax = mpl.subplots(
+            fig, axes = mpl.subplots(
                 figsize=(8.5,11),
+                ncols=nNights,
+                sharex="col",
                 gridspec_kw={
                     "top":0.92,
                     "bottom":0.03,
                     "left":0.13,
                     "right":0.98,
+                    "hspace":0,
+                    "wspace":0
                 },
                 tight_layout=False,constrained_layout=False
             )
-            extent = [0, len(time_grid)-1, -0.5, len(targets)-0.5]
-            ax.imshow(observability_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
-            ax.xaxis.tick_top()
-            ax.invert_yaxis()
+            for iNight in range(nNights):
+                ax = axes[iNight]
+                t_datetime = t_datetimes_nights_list[iNight]
+                time_grid = [Time(observer.timezone.localize(t)) for t in t_datetime]
+                
+                observability_grid = numpy.zeros((len(targets),len(time_grid)-1))
+                for i in range(len(time_grid)-1):
+                    observability_grid[:, i] = is_always_observable(constraints, observer, targets, times=[time_grid[i],time_grid[i+1]])
 
-            ax.set_yticks(range(0,len(targets)))
-            ax.set_yticklabels(targetLabelList, fontsize=ylabelsize)
+                extent = [0, len(time_grid)-1, -0.5, len(targets)-0.5]
+                ax.imshow(observability_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
+                ax.xaxis.tick_top()
+                ax.invert_yaxis()
 
-            ax.set_xticks(range(len(t_datetime)))
-            ax.set_xticks(range(len(t_datetime)),minor=True)
-            ax.set_xticklabels([t.strftime("%Hh") for t in t_datetime])
+                if iNight == 0:
+                    ax.set_yticks(range(0,len(targets)))
+                    ax.set_yticklabels(targetLabelList, fontsize=ylabelsize)
+                else:
+                    ax.set_yticks([])
 
-            ax.set_yticks(numpy.arange(extent[2], extent[3]), minor=True)
+                ax.set_xticks(range(0,len(t_datetime)-1,4))
+                ax.set_xticks(range(0,len(t_datetime)),minor=True)
+                ax.set_xticklabels([t_datetime[i].strftime("%Hh") for i in range(0,len(t_datetime)-1,4)])
 
-            ax.grid(which="minor",color="white",ls="-", linewidth=2)
+                ax.set_yticks(numpy.arange(extent[2], extent[3]), minor=True)
 
-            ax.tick_params(axis='y', which='minor', left=False, right=False)
-            ax.tick_params(axis='x', which='minor', bottom=False, top=False)
+                ax.grid(axis="x",which="both",color="white",ls="-", linewidth=1)
+                ax.grid(axis="y",which="minor",color="white",ls="-", linewidth=1)
+
+                ax.tick_params(axis='y', which='minor', left=False, right=False)
+                ax.tick_params(axis='x', which='minor', bottom=False, top=False)
         
             fig.suptitle(f"Observability from {observer.name} on {startDate.strftime('%a %Y-%m-%d')}")
             fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
             pdf.savefig(fig)
+            break
         print(f"Writing out file: {outfn}")
 
 
@@ -164,7 +181,7 @@ def main():
     parser.add_argument("objectNames",nargs='*',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
     parser.add_argument("--monthly",'-m',action="store_true",help="Make monthly visibility, otherwise, run nightly chart")
     parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
-    #parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
+    parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
     parser.add_argument("--printObjectLists","-p",action="store_true",help="Print out Messier and Caldwell catalogues.")
     parser.add_argument("--GlCl",action="store_true",help="Run all globular clusters from Messier and Caldwell catalogues")
     parser.add_argument("--OpCl",action="store_true",help="Run all open clusters from Messier and Caldwell catalogues")
@@ -226,4 +243,4 @@ def main():
     if args.monthly:
         run_months(observers, nameList, args.outFileNameBase)
     else:
-        run_nights(observers, nameList, args.outFileNameBase, args.startDate)
+        run_nights(observers, nameList, args.outFileNameBase, args.startDate, args.nNights)
