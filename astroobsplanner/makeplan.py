@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 # vim: set fileencoding=utf-8
 
-
 import sys
 import argparse
 import datetime
@@ -19,33 +18,17 @@ from astroplan import months_observable
 
 from .lookuptarget import lookuptarget, lookuptargettype
 
-def monthly_observability_to_table():
-    observability_table = Table()
-    observability_table['targets'] = [target.name for target in targets]
-    observability_table['ever_observable'] = ever_observable
-    observability_table['always_observable'] = always_observable
-    return observability_table
+def run_months(observers, nameList, outFileNameBase):
 
-def run():
-
-    observers = [
-            Observer(name="NMSkies",latitude=32.903308333333335*u.deg,longitude=-106.96066666666667*u.deg,elevation=2225.*u.meter,timezone='US/Mountain'),
-    ]
-
-    #time_range = Time(["2020-11-01 00:00", "2021-10-31 00:00"])
-    
-    nameList = ["M"+str(i) for i in range(1,111)]
-    #nameList = ["C"+str(i) for i in range(1,110)]
-    #nameList = ["C"+str(i) for i in range(1,75)]
     targets = [FixedTarget(coord=lookuptarget(name),name=name) for name in nameList]
     targetTypes = [lookuptargettype(name) for name in nameList]
 
     ylabelsize = "medium"
     if len(targets) < 25:
-        targetLabelList = ["{0}\n({1})".format(x,t) for x, t in zip(nameList,targetTypes)]
+        targetLabelList = ["{0}\n({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
         ylabelsize = "medium"
     else:
-        targetLabelList = ["{0} ({1})".format(x,t) for x, t in zip(nameList,targetTypes)]
+        targetLabelList = ["{0} ({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
         ylabelsize = "x-small"
 
     minAlt = 45
@@ -91,16 +74,70 @@ def run():
     
         fig.suptitle(f"Monthly Observability from {observer.name}")
         fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
-        fig.savefig("sched_months.pdf")
+        outfn = outFileNameBase+"_monthly.pdf"
+        print(f"Writing out file: {outfn}")
+        fig.savefig(outfn)
         
 
 def main():
     parser = argparse.ArgumentParser(description="Makes observability tables. Best to include less than 50 or so targets")
-    #parser.add_argument("outFileNames",metavar="out",nargs=1,help="Output file name (e.g. report1.png)")
-    #parser.add_argument("objectNames",metavar="object",nargs='+',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
+    parser.add_argument("outFileNameBase",help="Output file name base (will end in _monthly.pdf for month chart, etc.")
+    parser.add_argument("objectNames",nargs='*',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
     #parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
     #parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
-    #parser.add_argument("--bw",action="store_true",help="Black and white mode.")
+    parser.add_argument("--printObjectLists","-p",action="store_true",help="Print out Messier and Caldwell catalogues.")
+    parser.add_argument("--GlCl",action="store_true",help="Run all globular clusters from Messier and Caldwell catalogues")
+    parser.add_argument("--OpCl",action="store_true",help="Run all open clusters from Messier and Caldwell catalogues")
+    parser.add_argument("--G",'-g',action="store_true",help="Run all galaxies from Messier and Caldwell catalogues")
+    parser.add_argument("--PN",action="store_true",help="Run all planatary nebulae from Messier and Caldwell catalogues")
+    parser.add_argument("--Other",action="store_true",help="Run everything else from Messier and Caldwell catalogues")
     args = parser.parse_args()
+
+    observers = [
+            Observer(name="NMSkies",latitude=32.903308333333335*u.deg,longitude=-106.96066666666667*u.deg,elevation=2225.*u.meter,timezone='US/Mountain'),
+    ]
+
+    #time_range = Time(["2020-11-01 00:00", "2021-10-31 00:00"])
     
-    run()
+    messierAndCaldwellNames = ["M"+str(i) for i in range(1,111)]+["C"+str(i) for i in range(1,110)]
+    messierAndCaldwellTypes = [lookuptargettype(name) for name in messierAndCaldwellNames]
+    messierAndCaldwellGlClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "GlCl" in t] # globular clusters
+    messierAndCaldwellOpClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "OpCl" == t[0]] # main type open cluster
+    messierAndCaldwellGNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "G" in t] # galaxies
+    messierAndCaldwellPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "PN" in t] # planetary nebulae
+    messierAndCaldwellNotGNorGlClNorOpClNorPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if not (("G" in t) or ("GlCl" in t) or ("OpCl" == t[0]) or ("PN" in t))] # not galaxies nor globular clusters nor main type open cluster nor planetary nebula
+    
+    if args.printObjectLists:
+        print(f"GlCl: {len(messierAndCaldwellGlClNames)}")
+        for name in messierAndCaldwellGlClNames:
+            print(f"  {name}")
+        print(f"OpCl: {len(messierAndCaldwellOpClNames)}")
+        for name in messierAndCaldwellOpClNames:
+            print(f"  {name}: {lookuptargettype(name)}")
+        print(f"G: {len(messierAndCaldwellGNames)}")
+        for name in messierAndCaldwellGNames:
+            print(f"  {name}")
+        print(f"PN: {len(messierAndCaldwellPNNames)}")
+        for name in messierAndCaldwellPNNames:
+            print(f"  {name}: {lookuptargettype(name)}")
+        print(f"Not G nor GlCl nor OpCl nor PN: {len(messierAndCaldwellNotGNorGlClNorOpClNorPNNames)}")
+        for name in messierAndCaldwellNotGNorGlClNorOpClNorPNNames:
+            print(f"  {name}: {lookuptargettype(name)}")
+        sys.exit(0)
+
+    nameList = args.objectNames
+    messierAndCaldwellNamesToUse = []
+    if args.GlCl:
+        messierAndCaldwellNamesToUse += messierAndCaldwellGlClNames
+    if args.OpCl:
+        messierAndCaldwellNamesToUse += messierAndCaldwellOpClNames
+    if args.G:
+        messierAndCaldwellNamesToUse += messierAndCaldwellGNames
+    if args.PN:
+        messierAndCaldwellNamesToUse += messierAndCaldwellPNNames
+    if args.Other:
+        messierAndCaldwellNamesToUse += messierAndCaldwellNotGNorGlClNorOpClNorPNNames
+    #messierAndCaldwellNamesToUse.sort() #need number sort not lexical
+    nameList += messierAndCaldwellNamesToUse
+    
+    run_months(observers, nameList, args.outFileNameBase)

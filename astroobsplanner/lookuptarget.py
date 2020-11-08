@@ -289,8 +289,10 @@ def lookuptargetxephem(name):
 def lookuptargettype(name):
   """
     Looks up target otype from SIMBAD
+    returns list of types, with main type first
   """
-  result = None
+  main_type = None
+  extra_types = None
   filename = UserDataFileBase("astro-observability-planner","targettypecache.txt").getFileName()
   mysimbad = Simbad()
   mysimbad.remove_votable_fields('coordinates')
@@ -300,8 +302,9 @@ def lookuptargettype(name):
     typeCacheReader = csv.reader(typeCacheFile, dialect='excel')
     for entry in typeCacheReader:
       if name.lower() == entry[0]:
-        result = entry[1]
-    if not result:
+        main_type = entry[1]
+        extra_types = entry[2]
+    if not main_type:
       try:
         lookupname = CALDWELL_MAP[name.lower()]
       except KeyError:
@@ -309,10 +312,11 @@ def lookuptargettype(name):
       finally:
         time.sleep(0.05)
         result_table = mysimbad.query_object(lookupname)
-        result = result_table["OTYPE"][0].decode()
+        main_type = result_table["OTYPE"][0].decode()
         extra_types = result_table["OTYPES"][0].decode()
         typeCacheWriter = csv.writer(typeCacheFile, dialect='excel')
-        typeCacheWriter.writerow([name.lower(),result,extra_types])
+        typeCacheWriter.writerow([name.lower(),main_type,extra_types])
         if lookupname != name:
-            typeCacheWriter.writerow([lookupname.lower(),result,extra_types])
+            typeCacheWriter.writerow([lookupname.lower(),main_type,extra_types])
+  result = [main_type] + extra_types.split("|")
   return result
