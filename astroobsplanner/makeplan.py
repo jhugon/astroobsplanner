@@ -21,7 +21,7 @@ from astroplan.utils import time_grid_from_range
 
 from .lookuptarget import lookuptarget, lookuptargettype
 
-def run_months(observers, nameList, outFileNameBase):
+def run_months(observers, nameList, args):
 
     targets = [FixedTarget(coord=lookuptarget(name),name=name) for name in nameList]
     targetTypes = [lookuptargettype(name) for name in nameList]
@@ -43,15 +43,27 @@ def run_months(observers, nameList, outFileNameBase):
         #MoonSeparationConstraint(min=minMoonSep*u.deg),
     ]
     
-    outfn = outFileNameBase+"_monthly.pdf"
+    outfn = args.outFileNameBase+"_monthly.pdf"
     with PdfPages(outfn) as pdf:
         for observer in observers:
-            observability_months_table = months_observable(constraints,observer,targets)
+            observability_months_table = months_observable(constraints,observer,targets,time_grid_resolution=1*u.hour)
 
             observability_months_grid = numpy.zeros((len(targets),12))
             for i, observable in enumerate(observability_months_table):
                 for jMonth in range(1,13):
                     observability_months_grid[i,jMonth-1] = jMonth in observable
+
+            observable_targets = targets
+            observable_target_labels = targetLabelList
+            ever_observability_months_grid = observability_months_grid
+            if args.onlyEverObservable:
+                target_is_observable = numpy.zeros(len(targets))
+                for iMonth in range(observability_months_grid.shape[1]):
+                    target_is_observable += observability_months_grid[:,iMonth]
+                target_is_observable = target_is_observable > 0. # change to boolean numpy array
+                observable_targets = [x for x, o in zip(targets,target_is_observable) if o]
+                observable_target_labels = [x for x, o in zip(targetLabelList,target_is_observable) if o]
+                ever_observability_months_grid = observability_months_grid[target_is_observable,:]
 
             fig, ax = mpl.subplots(
                 figsize=(8.5,11),
@@ -63,12 +75,12 @@ def run_months(observers, nameList, outFileNameBase):
                 },
                 tight_layout=False,constrained_layout=False
             )
-            extent = [-0.5, -0.5+12, -0.5, len(targets)-0.5]
-            ax.imshow(observability_months_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
+            extent = [-0.5, -0.5+12, -0.5, len(observable_targets)-0.5]
+            ax.imshow(ever_observability_months_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
             ax.xaxis.tick_top()
             ax.invert_yaxis()
-            ax.set_yticks(range(0,len(targets)))
-            ax.set_yticklabels(targetLabelList, fontsize=ylabelsize)
+            ax.set_yticks(range(0,len(observable_targets)))
+            ax.set_yticklabels(observable_target_labels, fontsize=ylabelsize)
             ax.set_xticks(range(12))
             ax.set_xticklabels(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"])
             ax.set_xticks(numpy.arange(extent[0], extent[1]), minor=True)
@@ -274,5 +286,5 @@ def main():
         nameList += HCGNames
     
     if args.monthly:
-        run_months(observers, nameList, args.outFileNameBase)
+        run_months(observers, nameList, args)
     run_nights(observers, nameList, args)
