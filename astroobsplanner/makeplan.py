@@ -16,7 +16,7 @@ from astropy.table import Table
 import astropy.units as u
 
 from astroplan import Observer, FixedTarget, AltitudeConstraint, AirmassConstraint, AtNightConstraint, MoonSeparationConstraint, MoonIlluminationConstraint
-from astroplan import months_observable, is_always_observable
+from astroplan import months_observable, is_always_observable, is_observable
 from astroplan.utils import time_grid_from_range
 
 from .lookuptarget import lookuptarget, lookuptargettype
@@ -83,13 +83,13 @@ def run_months(observers, nameList, outFileNameBase):
             pdf.savefig(fig)
         print(f"Writing out file: {outfn}")
 
-def run_nights(observers, nameList, outFileNameBase, startDate, nNights):
+def run_nights(observers, nameList, args):
     # Define range of times to observe between
-    startDate = datetime.datetime.strptime(startDate,"%Y-%m-%d")
+    startDate = datetime.datetime.strptime(args.startDate,"%Y-%m-%d")
     beginTimeFirstNight = datetime.datetime(startDate.year,startDate.month,startDate.day,hour=16)
     endTimeFirstNight = beginTimeFirstNight + datetime.timedelta(hours=16)
     t_datetimes_nights_list = []
-    for iDay in range(nNights):
+    for iDay in range(args.nNights):
         beginTime = beginTimeFirstNight + datetime.timedelta(days=iDay)
         endTime = endTimeFirstNight + datetime.timedelta(days=iDay)
         currTime = beginTime
@@ -119,12 +119,12 @@ def run_nights(observers, nameList, outFileNameBase, startDate, nNights):
         MoonSeparationConstraint(min=minMoonSep*u.deg),
     ]
 
-    outfn = outFileNameBase+"_nightly.pdf"
+    outfn = args.outFileNameBase+"_nightly.pdf"
     with PdfPages(outfn) as pdf:
         for observer in observers:
             fig, axes = mpl.subplots(
                 figsize=(8.5,11),
-                ncols=nNights,
+                ncols=args.nNights,
                 sharex="col",
                 gridspec_kw={
                     "top":0.92,
@@ -136,24 +136,46 @@ def run_nights(observers, nameList, outFileNameBase, startDate, nNights):
                 },
                 tight_layout=False,constrained_layout=False
             )
-            for iNight in range(nNights):
-                ax = axes[iNight]
+
+            observability_grids = []
+            for iNight in range(args.nNights):
                 t_datetime = t_datetimes_nights_list[iNight]
                 time_grid = [Time(observer.timezone.localize(t)) for t in t_datetime]
                 
                 observability_grid = numpy.zeros((len(targets),len(time_grid)-1))
                 for i in range(len(time_grid)-1):
-                    observability_grid[:, i] = is_always_observable(constraints, observer, targets, times=[time_grid[i],time_grid[i+1]])
+                    tmp = is_always_observable(constraints, observer, targets, times=[time_grid[i],time_grid[i+1]])
+                    observability_grid[:, i] = tmp
+                observability_grids.append(observability_grid)
 
-                extent = [0, len(time_grid)-1, -0.5, len(targets)-0.5]
-                ax.imshow(observability_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
+            observable_targets = targets
+            observable_target_labels = targetLabelList
+            ever_observability_grids = observability_grids
+            if args.onlyEverObservable:
+                target_is_observable = numpy.zeros(len(targets))
+                for observability_grid in observability_grids:
+                    for iTime in range(observability_grid.shape[1]):
+                        target_is_observable += observability_grid[:,iTime]
+                target_is_observable = target_is_observable > 0. # change to boolean numpy array
+                observable_targets = [x for x, o in zip(targets,target_is_observable) if o]
+                observable_target_labels = [x for x, o in zip(targetLabelList,target_is_observable) if o]
+                ever_observability_grids = []
+                for observability_grid in observability_grids:
+                    ever_observability_grid = observability_grid[target_is_observable,:]
+                    ever_observability_grids.append(ever_observability_grid)
+
+            for iNight in range(args.nNights):
+                ax = axes[iNight]
+                t_datetime = t_datetimes_nights_list[iNight]
+                extent = [0, len(t_datetime)-1, -0.5, len(observable_targets)-0.5]
+                ax.imshow(ever_observability_grids[iNight], extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
                 ax.xaxis.tick_top()
                 ax.xaxis.set_label_position("top")
                 ax.invert_yaxis()
 
                 if iNight == 0:
-                    ax.set_yticks(range(0,len(targets)))
-                    ax.set_yticklabels(targetLabelList, fontsize=ylabelsize)
+                    ax.set_yticks(range(0,len(observable_targets)))
+                    ax.set_yticklabels(observable_target_labels, fontsize=ylabelsize)
                 else:
                     ax.set_yticks([])
 
@@ -185,11 +207,13 @@ def main():
     parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
     parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
     parser.add_argument("--printObjectLists","-p",action="store_true",help="Print out Messier and Caldwell catalogues.")
+    parser.add_argument("--onlyEverObservable",'-o',action="store_true",help="For each site, only display objects that are ever observable in the time range (get rid of empty rows)")
     parser.add_argument("--GlCl",action="store_true",help="Run all globular clusters from Messier and Caldwell catalogues")
     parser.add_argument("--OpCl",action="store_true",help="Run all open clusters from Messier and Caldwell catalogues")
     parser.add_argument("--G",'-g',action="store_true",help="Run all galaxies from Messier and Caldwell catalogues")
     parser.add_argument("--PN",action="store_true",help="Run all planatary nebulae from Messier and Caldwell catalogues")
     parser.add_argument("--Other",action="store_true",help="Run everything else from Messier and Caldwell catalogues")
+    parser.add_argument("--HCG",action="store_true",help="Run all of Hickson's Compact Groups of galaxies")
     args = parser.parse_args()
 
     observers = [
@@ -208,6 +232,8 @@ def main():
     messierAndCaldwellGNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "G" in t] # galaxies
     messierAndCaldwellPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "PN" in t] # planetary nebulae
     messierAndCaldwellNotGNorGlClNorOpClNorPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if not (("G" in t) or ("GlCl" in t) or ("OpCl" == t[0]) or ("PN" in t))] # not galaxies nor globular clusters nor main type open cluster nor planetary nebula
+
+    HCGNames = ["HCG"+str(i) for i in range(1,101)] # Hickson's Compact Groups of galaxies
     
     if args.printObjectLists:
         print(f"GlCl: {len(messierAndCaldwellGlClNames)}")
@@ -225,6 +251,9 @@ def main():
         print(f"Not G nor GlCl nor OpCl nor PN: {len(messierAndCaldwellNotGNorGlClNorOpClNorPNNames)}")
         for name in messierAndCaldwellNotGNorGlClNorOpClNorPNNames:
             print(f"  {name}: {lookuptargettype(name)}")
+        print(f"Hickson's Compact Groups of galaxies:")
+        for name in HCGNames:
+            print(f"  {name}: {lookuptargettype(name)}")
         sys.exit(0)
 
     nameList = args.objectNames
@@ -241,8 +270,9 @@ def main():
         messierAndCaldwellNamesToUse += messierAndCaldwellNotGNorGlClNorOpClNorPNNames
     #messierAndCaldwellNamesToUse.sort() #need number sort not lexical
     nameList += messierAndCaldwellNamesToUse
+    if args.HCG:
+        nameList += HCGNames
     
     if args.monthly:
         run_months(observers, nameList, args.outFileNameBase)
-    else:
-        run_nights(observers, nameList, args.outFileNameBase, args.startDate, args.nNights)
+    run_nights(observers, nameList, args)
