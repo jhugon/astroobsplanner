@@ -34,13 +34,9 @@ def run_months(observers, nameList, args):
         targetLabelList = ["{0} ({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
         ylabelsize = "x-small"
 
-    minAlt = 45
-    minMoonSep = 50
-
     constraints = [
-        AltitudeConstraint(min=minAlt*u.deg),
+        AltitudeConstraint(min=args.minAlt*u.deg),
         AtNightConstraint.twilight_astronomical(),
-        #MoonSeparationConstraint(min=minMoonSep*u.deg),
     ]
     
     outfn = args.outFileNameBase+"_monthly.pdf"
@@ -90,8 +86,7 @@ def run_months(observers, nameList, args):
             ax.tick_params(axis='x', which='minor', bottom=False, top=False)
         
             fig.suptitle(f"Monthly Observability at {observer.name}")
-            #fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
-            fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$".format(minAlt),ha="right",va="bottom")
+            fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$".format(args.minAlt),ha="right",va="bottom")
             pdf.savefig(fig)
         print(f"Writing out file: {outfn}")
 
@@ -122,13 +117,11 @@ def run_nights(observers, nameList, args):
         targetLabelList = ["{0} ({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
         ylabelsize = "x-small"
 
-    minAlt = 45
-    minMoonSep = 50
-
     constraints = [
-        AltitudeConstraint(min=minAlt*u.deg),
+        AltitudeConstraint(min=args.minAlt*u.deg),
         AtNightConstraint.twilight_astronomical(),
-        MoonSeparationConstraint(min=minMoonSep*u.deg),
+        MoonSeparationConstraint(min=args.minMoonSep*u.deg),
+        MoonIlluminationConstraint(max=args.maxMoonIllum),
     ]
 
     outfn = args.outFileNameBase+"_nightly.pdf"
@@ -206,20 +199,23 @@ def run_nights(observers, nameList, args):
                 ax.tick_params(axis='x', which='minor', bottom=False, top=False)
         
             fig.suptitle(f"Observability at {observer.name} in {startDate.year}")
-            fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$".format(minAlt,minMoonSep),ha="right",va="bottom")
+            fig.text(1.0,0.0,"Constraints: Astronomical Twilight, Altitude $\geq {:.0f}^\circ$, Moon Seperation $\geq {:.0f}^\circ$, Moon Illumination $\leq {:.2f}$".format(args.minAlt,args.minMoonSep,args.maxMoonIllum),ha="right",va="bottom")
             pdf.savefig(fig)
         print(f"Writing out file: {outfn}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Makes observability tables. Best to include less than 50 or so targets")
+    parser = argparse.ArgumentParser(description="Makes observability tables. Best to include less than 100 or so targets")
     parser.add_argument("outFileNameBase",help="Output file name base (will end in _monthly.pdf for month chart, etc.")
     parser.add_argument("objectNames",nargs='*',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
     parser.add_argument("--monthly",'-m',action="store_true",help="Make monthly visibility, otherwise, run nightly chart")
     parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
     parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
-    parser.add_argument("--printObjectLists","-p",action="store_true",help="Print out Messier and Caldwell catalogues.")
+    parser.add_argument("--minAlt",'-a',type=float,default=45,help=f"Minimum altitude constraint, in degrees (default: 45)")
+    parser.add_argument("--minMoonSep",type=float,default=60,help=f"Minimum angular seperation between target and moon constraint, in degrees (default: 60)")
+    parser.add_argument("--maxMoonIllum",type=float,default=0.05,help=f"Maximum fractional moon illumination constraint: a float between 0.0 and 1.0. Also satisfied if moon has set. (default: 0.05)")
     parser.add_argument("--onlyEverObservable",'-o',action="store_true",help="For each site, only display objects that are ever observable in the time range (get rid of empty rows)")
+    parser.add_argument("--printObjectLists","-p",action="store_true",help="Print out Messier and Caldwell catalogues.")
     parser.add_argument("--GlCl",action="store_true",help="Run all globular clusters from Messier and Caldwell catalogues")
     parser.add_argument("--OpCl",action="store_true",help="Run all open clusters from Messier and Caldwell catalogues")
     parser.add_argument("--G",'-g',action="store_true",help="Run all galaxies from Messier and Caldwell catalogues")
@@ -235,8 +231,6 @@ def main():
             Observer(name="Siding Spring, AUS",latitude=-31.27333*u.deg,longitude=-149.064444*u.deg,elevation=1165.*u.meter,timezone='Australia/Melbourne'),
     ]
 
-    #time_range = Time(["2020-11-01 00:00", "2021-10-31 00:00"])
-    
     messierAndCaldwellNames = ["M"+str(i) for i in range(1,111)]+["C"+str(i) for i in range(1,110)]
     messierAndCaldwellTypes = [lookuptargettype(name) for name in messierAndCaldwellNames]
     messierAndCaldwellGlClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "GlCl" in t] # globular clusters
