@@ -19,20 +19,35 @@ from astroplan import Observer, FixedTarget, AltitudeConstraint, AirmassConstrai
 from astroplan import months_observable, is_always_observable, is_observable
 from astroplan.utils import time_grid_from_range
 
-from .lookuptarget import lookuptarget, lookuptargettype
+from .lookuptarget import lookuptarget, lookuptargettype, CALDWELL_MAP
 
-def run_months(observers, nameList, args):
-
-    targets = [FixedTarget(coord=lookuptarget(name),name=name) for name in nameList]
+def makeTargetLabels(nameList,args):
     targetTypes = [lookuptargettype(name) for name in nameList]
 
-    ylabelsize = "medium"
-    if len(targets) < 25:
-        targetLabelList = ["{0}\n({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
+    result = []
+    seperator = " "
+    ylabelsize = "x-small"
+    if len(nameList) < 25:
+        seperator = "\n"
         ylabelsize = "medium"
-    else:
-        targetLabelList = ["{0} ({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
-        ylabelsize = "x-small"
+    for x,t in zip(nameList,targetTypes):
+            thisResult = ""
+            try:
+                othername = CALDWELL_MAP[x.lower()]
+            except KeyError:
+                thisResult += x
+            else:
+                if ("ngc" in othername) or ("ic" in othername):
+                    othername = othername.upper()
+                thisResult += f"{x} ({othername})"
+            if args.showType:
+                thisResult += f"{seperator}{t[0]}"
+            result.append(thisResult)
+    return result, ylabelsize
+
+def run_months(observers, nameList, args):
+    targets = [FixedTarget(coord=lookuptarget(name),name=name) for name in nameList]
+    targetLabelList, ylabelsize = makeTargetLabels(nameList,args)
 
     constraints = [
         AltitudeConstraint(min=args.minAlt*u.deg),
@@ -107,15 +122,7 @@ def run_nights(observers, nameList, args):
         t_datetimes_nights_list.append(t_datetime)
 
     targets = [FixedTarget(coord=lookuptarget(name),name=name) for name in nameList]
-    targetTypes = [lookuptargettype(name) for name in nameList]
-
-    ylabelsize = "medium"
-    if len(targets) < 25:
-        targetLabelList = ["{0}\n({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
-        ylabelsize = "medium"
-    else:
-        targetLabelList = ["{0} ({1})".format(x,t[0]) for x, t in zip(nameList,targetTypes)]
-        ylabelsize = "x-small"
+    targetLabelList, ylabelsize = makeTargetLabels(nameList,args)
 
     constraints = [
         AltitudeConstraint(min=args.minAlt*u.deg),
@@ -215,6 +222,7 @@ def main():
     parser.add_argument("--minMoonSep",type=float,default=60,help=f"Minimum angular seperation between target and moon constraint, in degrees (default: 60)")
     parser.add_argument("--maxMoonIllum",type=float,default=0.05,help=f"Maximum fractional moon illumination constraint: a float between 0.0 and 1.0. Also satisfied if moon has set. (default: 0.05)")
     parser.add_argument("--onlyEverObservable",'-o',action="store_true",help="For each site, only display objects that are ever observable in the time range (get rid of empty rows)")
+    parser.add_argument("--showType",action="store_true",help="For each object, list the main type returned from looking it up in SIMBAD in the tables")
     parser.add_argument("--printObjectLists","-p",action="store_true",help="Print out Messier and Caldwell catalogues.")
     parser.add_argument("--GlCl",action="store_true",help="Run all globular clusters from Messier and Caldwell catalogues")
     parser.add_argument("--OpCl",action="store_true",help="Run all open clusters from Messier and Caldwell catalogues")
@@ -235,7 +243,7 @@ def main():
     messierAndCaldwellTypes = [lookuptargettype(name) for name in messierAndCaldwellNames]
     messierAndCaldwellGlClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "GlCl" in t] # globular clusters
     messierAndCaldwellOpClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "OpCl" == t[0]] # main type open cluster
-    messierAndCaldwellGNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "G" in t] # galaxies
+    messierAndCaldwellGNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "G" in t and not ("GlCl" == t[0]) and not ("OpCl" == t[0]) and not ("PN" == t[0]) and not ("SNR" == t[0]) and not ("HII" == t[0])] # galaxies
     messierAndCaldwellPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "PN" in t] # planetary nebulae
     messierAndCaldwellNotGNorGlClNorOpClNorPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if not (("G" in t) or ("GlCl" in t) or ("OpCl" == t[0]) or ("PN" in t))] # not galaxies nor globular clusters nor main type open cluster nor planetary nebula
 
@@ -244,13 +252,13 @@ def main():
     if args.printObjectLists:
         print(f"GlCl: {len(messierAndCaldwellGlClNames)}")
         for name in messierAndCaldwellGlClNames:
-            print(f"  {name}")
+            print(f"  {name}: {lookuptargettype(name)}")
         print(f"OpCl: {len(messierAndCaldwellOpClNames)}")
         for name in messierAndCaldwellOpClNames:
             print(f"  {name}: {lookuptargettype(name)}")
         print(f"G: {len(messierAndCaldwellGNames)}")
         for name in messierAndCaldwellGNames:
-            print(f"  {name}")
+            print(f"  {name}: {lookuptargettype(name)}")
         print(f"PN: {len(messierAndCaldwellPNNames)}")
         for name in messierAndCaldwellPNNames:
             print(f"  {name}: {lookuptargettype(name)}")
