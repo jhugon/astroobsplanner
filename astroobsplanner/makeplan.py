@@ -96,7 +96,7 @@ def run_months(observers, nameList, args):
             ax.set_xticklabels(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"])
             ax.set_xticks(numpy.arange(extent[0], extent[1]), minor=True)
             ax.set_yticks(numpy.arange(extent[2], extent[3]), minor=True)
-            ax.grid(which="minor",color="white",ls="-", linewidth=2)
+            ax.grid(which="minor",color="black",ls="-", linewidth=1)
             ax.tick_params(axis='y', which='minor', left=False, right=False)
             ax.tick_params(axis='x', which='minor', bottom=False, top=False)
         
@@ -199,8 +199,9 @@ def run_nights(observers, nameList, args):
 
                 ax.set_yticks(numpy.arange(extent[2], extent[3]), minor=True)
 
-                ax.grid(axis="x",which="both",color="white",ls="-", linewidth=1)
-                ax.grid(axis="y",which="minor",color="white",ls="-", linewidth=1)
+                ax.grid(axis="x",which="minor",color="0.7",ls="-", linewidth=0.5)
+                ax.grid(axis="x",which="major",color="0.7",ls="-", linewidth=1)
+                ax.grid(axis="y",which="minor",color="0.7",ls="-", linewidth=0.5)
 
                 ax.tick_params(axis='y', which='minor', left=False, right=False)
                 ax.tick_params(axis='x', which='minor', bottom=False, top=False)
@@ -236,7 +237,7 @@ def main():
             Observer(name="NM Skies",latitude=32.903308333333335*u.deg,longitude=-106.96066666666667*u.deg,elevation=2225.*u.meter,timezone='US/Mountain'),
             Observer(name="Sierra Remote Obs., CA",latitude=37.0703*u.deg,longitude=-119.4128*u.deg,elevation=1405.*u.meter,timezone='US/Pacific'),
             Observer(name="AstroCamp, Spain",latitude=38.15*u.deg,longitude=-2.31*u.deg,elevation=1650.*u.meter,timezone='Europe/Madrid'),
-            Observer(name="Siding Spring, AUS",latitude=-31.27333*u.deg,longitude=-149.064444*u.deg,elevation=1165.*u.meter,timezone='Australia/Melbourne'),
+            Observer(name="Siding Spring, AUS",latitude=-31.27333*u.deg,longitude=149.064444*u.deg,elevation=1165.*u.meter,timezone='Australia/Melbourne'),
     ]
 
     messierAndCaldwellNames = ["M"+str(i) for i in range(1,111)]+["C"+str(i) for i in range(1,110)]
