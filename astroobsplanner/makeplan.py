@@ -216,6 +216,7 @@ def main():
     parser = argparse.ArgumentParser(description="Makes observability tables. Best to include less than 100 or so targets")
     parser.add_argument("outFileNameBase",help="Output file name base (will end in _monthly.pdf for month chart, etc.")
     parser.add_argument("objectNames",nargs='*',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
+    parser.add_argument("--textFileObjNames",'-t',help="A newline seperated list of object names is in the text file. Funcions just like extra objectNames")
     parser.add_argument("--monthly",'-m',action="store_true",help="Make monthly visibility, otherwise, run nightly chart")
     parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
     parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
@@ -272,6 +273,15 @@ def main():
         sys.exit(0)
 
     nameList = args.objectNames
+    if args.textFileObjNames:
+        print(f"Reading object names from: '{args.textFileObjNames}'")
+        try:
+            with open(args.textFileObjNames) as infile:
+                for line in infile.readlines():
+                    nameList.append(line.strip("\n"))
+        except FileNotFoundError as e:
+            print(f"Error: {e}, exiting.")
+            sys.exit(1)
     messierAndCaldwellNamesToUse = []
     if args.GlCl:
         messierAndCaldwellNamesToUse += messierAndCaldwellGlClNames
