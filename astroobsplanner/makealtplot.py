@@ -95,7 +95,7 @@ def main():
     from matplotlib import pyplot as mpl
     import matplotlib
     from matplotlib.backends.backend_pdf import PdfPages
-    from .lookuptarget import lookuptarget
+    from .lookuptarget import lookuptarget, lookuptargettype, CALDWELL_MAP
     from .observabilityplot import ObservabilityPlot
     from .observabilitylegend import LegendForObservability
     import datetime
@@ -104,13 +104,18 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="Makes graphs of the altitude (spherical coordinate) of an astronomical object versus time. Only shows astronomical night, i.e. when astronomical twilight ends to when it starts again. Local time is displayed on the x-axis for the following 5 nights. The minimum seperation of an object with the moon is displayed for each day. The lunar phase is displayed in degrees with 0 deg being new moon and 180 deg being full moon.")
     parser.add_argument("outFileNames",metavar="out",nargs=1,help="Output file name (e.g. report1.png)")
-    parser.add_argument("objectNames",metavar="object",nargs='+',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
+    parser.add_argument("objectNames",nargs='*',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
+    parser.add_argument("--textFileObjNames",'-t',help="A newline seperated list of object names is in the text file. Funcions just like extra objectNames")
     parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
     parser.add_argument("--nNights",'-n',type=int,default=5,help=f"Number of nights to show including STARTDATE (default: 5)")
-    parser.add_argument("--bw",action="store_true",help="Black and white mode.")
+    #parser.add_argument("--GlCl",action="store_true",help="Run all globular clusters from Messier and Caldwell catalogues")
+    #parser.add_argument("--OpCl",action="store_true",help="Run all open clusters from Messier and Caldwell catalogues")
+    #parser.add_argument("--G",'-g',action="store_true",help="Run all galaxies from Messier and Caldwell catalogues")
+    #parser.add_argument("--PN",action="store_true",help="Run all planatary nebulae from Messier and Caldwell catalogues")
+    #parser.add_argument("--Other",action="store_true",help="Run everything else from Messier and Caldwell catalogues")
+    #parser.add_argument("--HCG",action="store_true",help="Run all of Hickson's Compact Groups of galaxies")
     args = parser.parse_args()
     assert(len(args.outFileNames)>0)
-    assert(len(args.objectNames)>0)
     
     locationDict = {
                     #32° 54' 11.91" North, 105° 31' 43.32" West
@@ -141,8 +146,44 @@ def main():
             currTime += datetime.timedelta(minutes=15)
         t_datetimes_nights_list.append(t_datetime)
 
+    #messierAndCaldwellNames = ["M"+str(i) for i in range(1,111)]+["C"+str(i) for i in range(1,110)]
+    #messierAndCaldwellTypes = [lookuptargettype(name) for name in messierAndCaldwellNames]
+    #messierAndCaldwellGlClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "GlCl" in t] # globular clusters
+    #messierAndCaldwellOpClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "OpCl" == t[0]] # main type open cluster
+    #messierAndCaldwellGNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "G" in t and not ("GlCl" == t[0]) and not ("OpCl" == t[0]) and not ("PN" == t[0]) and not ("SNR" == t[0]) and not ("HII" == t[0])] # galaxies
+    #messierAndCaldwellPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "PN" in t] # planetary nebulae
+    #messierAndCaldwellNotGNorGlClNorOpClNorPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if not (("G" in t) or ("GlCl" in t) or ("OpCl" == t[0]) or ("PN" in t))] # not galaxies nor globular clusters nor main type open cluster nor planetary nebula
+
+    #HCGNames = ["HCG"+str(i) for i in range(1,101)] # Hickson's Compact Groups of galaxies
     
     nameList = args.objectNames
+    if args.textFileObjNames:
+        print(f"Reading object names from: '{args.textFileObjNames}'")
+        try:
+            with open(args.textFileObjNames) as infile:
+                for line in infile.readlines():
+                    nameList.append(line.strip("\n"))
+        except FileNotFoundError as e:
+            print(f"Error: {e}, exiting.")
+            sys.exit(1)
+    #messierAndCaldwellNamesToUse = []
+    #if args.GlCl:
+    #    messierAndCaldwellNamesToUse += messierAndCaldwellGlClNames
+    #if args.OpCl:
+    #    messierAndCaldwellNamesToUse += messierAndCaldwellOpClNames
+    #if args.G:
+    #    messierAndCaldwellNamesToUse += messierAndCaldwellGNames
+    #if args.PN:
+    #    messierAndCaldwellNamesToUse += messierAndCaldwellPNNames
+    #if args.Other:
+    #    messierAndCaldwellNamesToUse += messierAndCaldwellNotGNorGlClNorOpClNorPNNames
+    ##messierAndCaldwellNamesToUse.sort() #need number sort not lexical
+    #nameList += messierAndCaldwellNamesToUse
+    #if args.HCG:
+    #    nameList += HCGNames
+    if len(nameList) == 0:
+        print("Error: either some object names or -t names.txt with object names in it required. Exiting.")
+        sys.exit(1)
     coordList = [lookuptarget(x) for x in nameList]
     
     with PdfPages(args.outFileNames[0]) as pdf:
