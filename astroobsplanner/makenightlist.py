@@ -83,7 +83,6 @@ def run_nightlist(observers, nameList, args):
 
 def main():
     parser = argparse.ArgumentParser(description="Lists nights when the object(s) are observable, and the times in those nights.")
-    parser.add_argument("outFileNameBase",help="Output file name base (will end in .txt)")
     parser.add_argument("objectNames",nargs='*',help='Object name (e.g. "M42" "Polaris" "Gam Cru" "Orion Nebula")')
     parser.add_argument("--textFileObjNames",'-t',help="A newline seperated list of object names is in the text file. Funcions just like extra objectNames")
     parser.add_argument("--startDate",'-s',default=str(datetime.date.today()),help=f"Start date in ISO format YYYY-MM-DD (default: today, {datetime.date.today()})")
