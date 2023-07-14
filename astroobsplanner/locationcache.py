@@ -56,10 +56,22 @@ class LocationCache(object):
     data = {}
                 #32° 54' 11.91" North, 105° 31' 43.32" West
     data["NM Skies"] = {
-                      'latitude':  32.903308333333335,
-                      'longitude': -106.96066666666667,
+                      'latitude':  32.9033,
+                      'longitude': -106.9606,
                       'elevation': 2225.,
                       'tz':        'US/Mountain',
+                       }
+    data["Utah Desert Remote Observatory"] = {
+                      'latitude':  37.7378,
+                      'longitude': -113.6975,
+                      'elevation': 1570.,
+                      'tz':        'US/Mountain',
+                       }
+    data["Sierra Remote Observatory"] = {
+                      'latitude':  37.07,
+                      'longitude': -119.4,
+                      'elevation': 1405.,
+                      'tz':        'America/Los_Angeles',
                        }
                 #38° 09' North, 002° 19' West
     data["Astro Camp Spain"] = {
@@ -68,12 +80,24 @@ class LocationCache(object):
                       'elevation': 1650,
                       'tz':        'Europe/Madrid',
                            }
+    data["Entre Encinas y Estrellas Spain"] = {
+                      'latitude':  38.2184,
+                      'longitude': -6.6303,
+                      'elevation': 560,
+                      'tz':        'Europe/Madrid',
+                           }
                 #31° 16' 24" South, 149° 03' 52" East
     data["Siding Spring Australia"] = {
-                      'latitude':  -31.273333333333333,
-                      'longitude': 149.06444444444446,
+                      'latitude':  -31.2733,
+                      'longitude': 149.0644,
                       'elevation': 1165,
                       'tz':        'Australia/Melbourne',
+                           }
+    data["Deep Sky Chile"] = {
+                      'latitude':  -30.5263,
+                      'longitude': -70.8533,
+                      'elevation': 1710,
+                      'tz':        'America/Santiago',
                            }
     self.udfj.writeDict(data)
 

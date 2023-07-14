@@ -239,10 +239,13 @@ def main():
     args = parser.parse_args()
 
     observers = [
-            Observer(name="NM Skies",latitude=32.903308333333335*u.deg,longitude=-106.96066666666667*u.deg,elevation=2225.*u.meter,timezone='US/Mountain'),
+            Observer(name="NM Skies",latitude=32.9033*u.deg,longitude=-106.9606*u.deg,elevation=2225.*u.meter,timezone='US/Mountain'),
             Observer(name="Sierra Remote Obs., CA",latitude=37.0703*u.deg,longitude=-119.4128*u.deg,elevation=1405.*u.meter,timezone='US/Pacific'),
+            Observer(name="Utah Desert Remote Obs.",latitude=37.7378*u.deg,longitude=-113.6975*u.deg,elevation=1570.*u.meter,timezone='US/Mountain'),
             Observer(name="AstroCamp, Spain",latitude=38.15*u.deg,longitude=-2.31*u.deg,elevation=1650.*u.meter,timezone='Europe/Madrid'),
-            Observer(name="Siding Spring, AUS",latitude=-31.27333*u.deg,longitude=149.064444*u.deg,elevation=1165.*u.meter,timezone='Australia/Melbourne'),
+            Observer(name="EEyE, Spain",latitude=38.1284*u.deg,longitude=-6.6303*u.deg,elevation=560.*u.meter,timezone='Europe/Madrid'),
+            Observer(name="Siding Spring, AUS",latitude=-31.2733*u.deg,longitude=149.0644*u.deg,elevation=1165.*u.meter,timezone='Australia/Melbourne'),
+            Observer(name="Deep Sky Chile",latitude=-30.5263*u.deg,longitude=-70.8533*u.deg,elevation=1710.*u.meter,timezone='America/Santiago'),
     ]
 
     messierAndCaldwellNames = ["M"+str(i) for i in range(1,111)]+["C"+str(i) for i in range(1,110)]
