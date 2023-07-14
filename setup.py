@@ -30,6 +30,7 @@ setup(name='astroobsplanner',
             'astroobsplannercmd = astroobsplanner.makeobsplot:main',
             'astroobsplanneraltcmd = astroobsplanner.makealtplot:main',
             'astroobsplannerschedcmd = astroobsplanner.makeplan:main',
+            'astroobsplannerlistnightscmd = astroobsplanner.makenightlist:main',
         ]
       },
       provides=['astroobsplanner'],
