@@ -26,3 +26,22 @@ Uses CDS to look up the coordinates of deep-space objects.  Accepts "M33",
 "HD125", "HIP12512", "Alpha Cent", and other designations. Coordinates are
 locally cached on first look up.  The only solar-system objects supported are
 the major planets (and Pluto).
+
+Programs
+--------
+
+The package installs 1 GUI program:
+
+- `astroobsplanner`: the main program of the package. It shows regions when an
+  object is observable on a local time vs date plot, for up to 3 locations at
+  once.
+
+and 3 command line programs:
+
+- `astroobsplannercmd`: same thing as astroobsplanner, just for scripting.
+- `astroobsplanneraltcmd`: makes a bunch of altitude (above the horizon) of an
+  object vs. time plots for the coming days.
+- `astroobsplannerschedcmd`: For a list of objects, makes a grid of object vs.
+  hour of the night, with a grid per night. Boxes are filled in if the object is
+  observable that whole hour. A similar plot can be generated for months instead
+  of hours/nights.

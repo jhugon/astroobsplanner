@@ -312,8 +312,8 @@ def lookuptargettype(name):
       finally:
         time.sleep(0.05)
         result_table = mysimbad.query_object(lookupname)
-        main_type = result_table["OTYPE"][0].decode()
-        extra_types = result_table["OTYPES"][0].decode()
+        main_type = result_table["OTYPE"][0]
+        extra_types = result_table["OTYPES"][0]
         typeCacheWriter = csv.writer(typeCacheFile, dialect='excel')
         typeCacheWriter.writerow([name.lower(),main_type,extra_types])
         if lookupname != name:

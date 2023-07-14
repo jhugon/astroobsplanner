@@ -80,11 +80,11 @@ def run_months(observers, nameList, args):
                 figsize=(8.5,11),
                 gridspec_kw={
                     "top":0.92,
-                    "bottom":0.03,
+                    "bottom":0.1,
                     "left":0.13,
                     "right":0.98,
                 },
-                tight_layout=False,constrained_layout=False
+                layout="constrained"
             )
             extent = [-0.5, -0.5+12, -0.5, len(observable_targets)-0.5]
             ax.imshow(ever_observability_months_grid, extent=extent, origin="lower", aspect="auto", cmap=mpl.get_cmap("Greens"))
@@ -146,7 +146,7 @@ def run_nights(observers, nameList, args):
                     "hspace":0,
                     "wspace":0
                 },
-                tight_layout=False,constrained_layout=False
+                layout="constrained"
             )
 
             observability_grids = []
