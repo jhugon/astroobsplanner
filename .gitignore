@@ -1,2 +1,9 @@
 dist/
+.eggs/
 astroobsplanner.egg-info/
+*.pdf
+*.pyc
+.*~
+.*.un
+.*.swp
+de421.bsp
