@@ -46,6 +46,8 @@ def makeTargetLabels(nameList,args):
     return result, ylabelsize
 
 def run_months(observers, nameList, args):
+    assert(len(observers)>0)
+    assert(len(nameList)>0)
     targets = [FixedTarget(coord=lookuptarget(name),name=name) for name in nameList]
     targetLabelList, ylabelsize = makeTargetLabels(nameList,args)
 
@@ -106,6 +108,8 @@ def run_months(observers, nameList, args):
         print(f"Writing out file: {outfn}")
 
 def run_nights(observers, nameList, args):
+    assert(len(observers)>0)
+    assert(len(nameList)>0)
     # Define range of times to observe between
     startDate = datetime.datetime.strptime(args.startDate,"%Y-%m-%d")
     beginTimeFirstNight = datetime.datetime(startDate.year,startDate.month,startDate.day,hour=16)
@@ -243,11 +247,25 @@ def main():
 
     messierAndCaldwellNames = ["M"+str(i) for i in range(1,111)]+["C"+str(i) for i in range(1,110)]
     messierAndCaldwellTypes = [lookuptargettype(name) for name in messierAndCaldwellNames]
-    messierAndCaldwellGlClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "GlCl" in t] # globular clusters
-    messierAndCaldwellOpClNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "OpCl" == t[0]] # main type open cluster
-    messierAndCaldwellGNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "G" in t and not ("GlCl" == t[0]) and not ("OpCl" == t[0]) and not ("PN" == t[0]) and not ("SNR" == t[0]) and not ("HII" == t[0])] # galaxies
-    messierAndCaldwellPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if "PN" in t] # planetary nebulae
-    messierAndCaldwellNotGNorGlClNorOpClNorPNNames = [n for n,t in zip(messierAndCaldwellNames,messierAndCaldwellTypes) if not (("G" in t) or ("GlCl" in t) or ("OpCl" == t[0]) or ("PN" in t))] # not galaxies nor globular clusters nor main type open cluster nor planetary nebula
+    messierAndCaldwellGlClNames = []
+    messierAndCaldwellOpClNames = []
+    messierAndCaldwellGNames = []
+    messierAndCaldwellPNNames = []
+    messierAndCaldwellNotGNorGlClNorOpClNorPNNames = []
+    for n, t in zip(messierAndCaldwellNames,messierAndCaldwellTypes):
+        match t:
+            case ["GlobCluster", *other_types]:
+                messierAndCaldwellGlClNames.append(n)
+            case ["OpenCluster", *other_types]:
+                messierAndCaldwellOpClNames.append(n)
+            case ["PlanetaryNeb", *other_types]:
+                messierAndCaldwellPNNames.append(n)
+            case ["Galaxy", *other_types]:
+                messierAndCaldwellGNames.append(n)
+            case [*all_types] if "G" in all_types:
+                messierAndCaldwellGNames.append(n)
+            case _:
+                messierAndCaldwellNotGNorGlClNorOpClNorPNNames.append(n)
 
     HCGNames = ["HCG"+str(i) for i in range(1,101)] # Hickson's Compact Groups of galaxies
     
